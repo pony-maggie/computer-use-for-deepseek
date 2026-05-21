@@ -1,0 +1,150 @@
+{
+  "project": "Computer Use for DeepSeek",
+  "harness_version": "lightweight-0.1",
+  "features": [
+    {
+      "id": "feat-001",
+      "name": "User-facing README",
+      "description": "English and Chinese README files explain product purpose, Claude Computer Use inspiration, prerequisites, API key setup, startup, shutdown, file handling, and safety notes.",
+      "status": "done",
+      "dependencies": [],
+      "evidence": "README.md and README.zh-CN.md created and reviewed with targeted rg checks."
+    },
+    {
+      "id": "feat-002",
+      "name": "Product design spec",
+      "description": "Design spec defines the DeepSeek-based computer use product, local web app shape, sandbox runtime, workspace file flow, safety model, and milestones.",
+      "status": "done",
+      "dependencies": [],
+      "evidence": "docs/superpowers/specs/2026-05-17-deepseek-computer-use-design.md exists and passed marker scan."
+    },
+    {
+      "id": "feat-003",
+      "name": "Implementation plan",
+      "description": "Implementation plan decomposes backend, frontend, runtime, model adapter, workspace, safety, and smoke verification tasks.",
+      "status": "done",
+      "dependencies": ["feat-002"],
+      "evidence": "docs/superpowers/plans/2026-05-17-deepseek-computer-use.md exists and passed marker scan."
+    },
+    {
+      "id": "feat-004",
+      "name": "Lightweight development harness",
+      "description": "Add AGENTS.md, feature_list.json, progress.md, and init.sh so future agent sessions have instructions, state, scope control, verification, and lifecycle checks.",
+      "status": "done",
+      "dependencies": ["feat-001", "feat-002", "feat-003"],
+      "evidence": "./init.sh passed on 2026-05-17."
+    },
+    {
+      "id": "feat-005",
+      "name": "Project scaffold",
+      "description": "Create the backend, frontend, runtime, start/stop scripts, Docker Compose, and configuration skeleton described in the implementation plan.",
+      "status": "done",
+      "dependencies": ["feat-004"],
+      "evidence": "Task 1 scaffold created. docker compose config passed. Backend pytest passed with 1 test. Frontend npm run build passed."
+    },
+    {
+      "id": "feat-006",
+      "name": "Computer action protocol",
+      "description": "Implement provider-neutral action and observation models for screenshot, mouse, keyboard, scrolling, shell, and text-edit actions.",
+      "status": "done",
+      "dependencies": ["feat-005"],
+      "evidence": "ComputerAction and Observation protocol models implemented. Protocol tests passed with 4 tests. Backend pytest passed with 5 tests."
+    },
+    {
+      "id": "feat-007",
+      "name": "Workspace and persistence foundation",
+      "description": "Implement per-run workspace directories, path escape protection, SQLite schema, session helpers, and run repository basics.",
+      "status": "done",
+      "dependencies": ["feat-006"],
+      "evidence": "Workspace manager and persistence modules implemented. Workspace tests passed with 2 tests. Backend pytest passed with 7 tests."
+    },
+    {
+      "id": "feat-008",
+      "name": "DeepSeek model adapter",
+      "description": "Implement DeepSeek tool-call schema conversion, response parsing, and thinking-mode message handling.",
+      "status": "done",
+      "dependencies": ["feat-007"],
+      "evidence": "DeepSeekAdapter originally implemented with a generic tool schema, then aligned to split computer/bash/text_editor schemas in feat-015. Adapter tests now pass as part of the 25-test backend suite."
+    },
+    {
+      "id": "feat-009",
+      "name": "Agent core and mock runtime",
+      "description": "Implement runtime interface, mock runtime, safety policy, system prompt, and a basic agent loop that executes model tool calls through the runtime.",
+      "status": "done",
+      "dependencies": ["feat-006", "feat-008"],
+      "evidence": "Runtime interface, mock runtime, safety policy, and AgentCore implemented. Safety and agent tests passed with 4 tests. Backend pytest passed with 13 tests."
+    },
+    {
+      "id": "feat-010",
+      "name": "Run and workspace API",
+      "description": "Add FastAPI routes for run creation, workspace file upload/list/download, and run event WebSocket connection.",
+      "status": "done",
+      "dependencies": ["feat-005", "feat-007"],
+      "evidence": "Run/workspace API and WebSocket implemented. API route tests passed with 3 tests. Backend pytest passed with 16 tests."
+    },
+    {
+      "id": "feat-011",
+      "name": "Sandbox runtime and web console",
+      "description": "Implement Docker desktop runtime, noVNC viewing, local web console, workspace upload/download, and run controls.",
+      "status": "done",
+      "dependencies": ["feat-005", "feat-006", "feat-007", "feat-008", "feat-009", "feat-010"],
+      "evidence": "DockerRuntime, runtime supervisor services, and local web console implemented. Runtime execution boundary was later aligned to a runtime action daemon in feat-015. Frontend npm run build passed. Backend pytest now passes with 25 tests."
+    },
+    {
+      "id": "feat-012",
+      "name": "Run execution controls",
+      "description": "Wire run start, pause, resume, and cancel controls through FastAPI and the web UI, including a configuration guard for missing DeepSeek API keys.",
+      "status": "done",
+      "dependencies": ["feat-008", "feat-009", "feat-010", "feat-011"],
+      "evidence": "Run control API and UI actions implemented. API route tests passed with 5 tests. Backend pytest passed with 18 tests. Frontend npm run build passed."
+    },
+    {
+      "id": "feat-013",
+      "name": "Smoke tests and user docs",
+      "description": "Add API smoke tests and verify the user-facing README/startup path remains aligned with local web app usage.",
+      "status": "done",
+      "dependencies": ["feat-012"],
+      "evidence": "API smoke tests passed with 2 tests. Backend pytest passed with 20 tests. Frontend npm run build passed. start.sh missing-key setup path passed."
+    },
+    {
+      "id": "feat-014",
+      "name": "Safety and evaluation",
+      "description": "Add sensitive-action confirmation, action validation, audit trail, and smoke/evaluation workflows.",
+      "status": "done",
+      "dependencies": ["feat-013"],
+      "evidence": "Lightweight audit/event trail implemented for run creation, file upload, start errors, pause, resume, and cancel. API route tests passed with 6 tests. Backend pytest passed with 21 tests. Frontend npm run build passed."
+    },
+    {
+      "id": "feat-015",
+      "name": "Claude demo alignment fixes",
+      "description": "Align the design and implementation with the Anthropic quickstart and saved Zhihu field test: prebuilt runtime image path, split computer/bash/text_editor tools, normalized ToolResult, runtime action daemon boundary, and base64 screenshot results.",
+      "status": "done",
+      "dependencies": ["feat-011", "feat-014"],
+      "evidence": "Design and implementation plan updated. Backend protocol, DeepSeek adapter, safety policy, runtime client, and runtime action daemon changes implemented. ./init.sh passed. docker compose config passed. docker compose dev overlay config passed. Backend pytest passed with 25 tests. Frontend npm run build passed. runtime/daemon.py py_compile passed."
+    },
+    {
+      "id": "feat-016",
+      "name": "Run budget visibility and runtime smoke workflow",
+      "description": "Expose run step/token/cost budget metadata, enforce token budget in the agent loop, show usage in the web UI, and add a runtime smoke script for prebuilt or dev runtime images.",
+      "status": "done",
+      "dependencies": ["feat-015"],
+      "evidence": "RunState now includes steps, token budget, token usage, and estimated cost. AgentCore enforces token budget when provider usage is available. Web run controls show step/token/cost metadata. scripts/smoke-runtime.sh added. Backend pytest passed with 25 tests. Frontend npm run build passed. Compose config and dev overlay config passed. bash -n smoke script and runtime daemon py_compile passed."
+    },
+    {
+      "id": "feat-017",
+      "name": "GHCR runtime image publishing",
+      "description": "Configure the project to publish and consume a prebuilt runtime image from GitHub Container Registry under the pony-maggie GitHub account.",
+      "status": "done",
+      "dependencies": ["feat-015"],
+      "evidence": "Runtime image name updated to ghcr.io/pony-maggie/computer-use-for-deepseek-runtime:latest and GitHub Actions workflow added. Workflow YAML parse passed. ./init.sh passed. docker compose config passed. Backend pytest passed with 25 tests. Frontend npm run build passed."
+    },
+    {
+      "id": "feat-018",
+      "name": "API cost optimization controls",
+      "description": "Expose DeepSeek prompt cache hit/miss usage, keep a stable prompt/tool loop, de-duplicate repeated screenshots by hash, prefer browser DOM snapshots for browser tasks, enforce token and estimated cost budgets, and add configurable fast/pro model routing.",
+      "status": "done",
+      "dependencies": ["feat-016", "feat-017"],
+      "evidence": "AgentCore cost budget enforcement, prompt cache token accounting, screenshot hash compaction, browser_snapshot tool action, RunState/UI budget fields, and routing config implemented. Backend pytest passed with 28 tests. Frontend npm run build passed. ./init.sh passed. Compose config, dev overlay config, runtime daemon py_compile, and feature_list JSON validation passed."
+    }
+  ]
+}

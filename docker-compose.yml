@@ -1,0 +1,27 @@
+services:
+  server:
+    image: ${SERVER_IMAGE:-ghcr.io/pony-maggie/computer-use-for-deepseek-server:latest}
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/app/server/data
+      - ./workspace:/app/server/workspace
+      - ./screenshots:/app/server/screenshots
+    ports:
+      - "8000:8000"
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/pony-maggie/computer-use-for-deepseek-web:latest}
+    ports:
+      - "3000:80"
+
+  runtime:
+    image: ${RUNTIME_IMAGE:-ghcr.io/pony-maggie/computer-use-for-deepseek-runtime:latest}
+    shm_size: "1gb"
+    volumes:
+      - ./workspace:/workspace
+      - ./screenshots:/screenshots
+    ports:
+      - "6080:6080"
+      - "5900:5900"

@@ -1,0 +1,306 @@
+import pytest
+import json
+
+from deepseek_computer_use.agent.core import AgentCore
+from deepseek_computer_use.models.protocol import BashAction, ComputerAction, ToolCall, ToolResult
+from deepseek_computer_use.runtime.mock_runtime import MockRuntime
+from deepseek_computer_use.safety.policy import SafetyPolicy
+
+
+class FakeModel:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def complete(self, messages):
+        self.calls += 1
+        if self.calls == 1:
+            return type(
+                "Parsed",
+                (),
+                {
+                    "assistant_message": {"role": "assistant", "content": ""},
+                    "final_text": None,
+                    "tool_calls": [
+                        ToolCall(
+                            tool_call_id="call_1",
+                            name="computer",
+                            computer=ComputerAction(action="screenshot"),
+                        )
+                    ],
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+            )()
+        return type(
+            "Parsed",
+            (),
+            {
+                "assistant_message": {"role": "assistant", "content": "done"},
+                "final_text": "done",
+                "tool_calls": [],
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        )()
+
+    def tool_result_message(self, tool_call_id: str, content: str | ToolResult):
+        if isinstance(content, ToolResult):
+            content = content.model_dump_json(exclude_none=True)
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+
+
+class ExpensiveModel:
+    def complete(self, messages):
+        return type(
+            "Parsed",
+            (),
+            {
+                "assistant_message": {"role": "assistant", "content": "done"},
+                "final_text": "done",
+                "tool_calls": [],
+                "prompt_tokens": 1_000_000,
+                "completion_tokens": 0,
+                "total_tokens": 1_000_000,
+                "prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 1_000_000,
+            },
+        )()
+
+    def tool_result_message(self, tool_call_id: str, content: str | ToolResult):
+        if isinstance(content, ToolResult):
+            content = content.model_dump_json(exclude_none=True)
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+
+
+class RepeatScreenshotModel:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.tool_messages: list[dict[str, str]] = []
+
+    def complete(self, messages):
+        self.calls += 1
+        self.tool_messages = [message for message in messages if message["role"] == "tool"]
+        if self.calls <= 2:
+            return type(
+                "Parsed",
+                (),
+                {
+                    "assistant_message": {"role": "assistant", "content": ""},
+                    "final_text": None,
+                    "tool_calls": [
+                        ToolCall(
+                            tool_call_id=f"call_{self.calls}",
+                            name="computer",
+                            computer=ComputerAction(action="screenshot"),
+                        )
+                    ],
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "prompt_cache_hit_tokens": 6,
+                    "prompt_cache_miss_tokens": 4,
+                },
+            )()
+        return type(
+            "Parsed",
+            (),
+            {
+                "assistant_message": {"role": "assistant", "content": "done"},
+                "final_text": "done",
+                "tool_calls": [],
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_cache_hit_tokens": 9,
+                "prompt_cache_miss_tokens": 1,
+            },
+        )()
+
+    def tool_result_message(self, tool_call_id: str, content: str | ToolResult):
+        if isinstance(content, ToolResult):
+            content = content.model_dump_json(exclude_none=True)
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+
+
+class StableScreenshotRuntime:
+    async def execute(self, tool_call: ToolCall) -> ToolResult:
+        return ToolResult(
+            output="executed screenshot",
+            base64_image="c2FtZQ==",
+            image_hash="sha256:same",
+            system="display=1280x800",
+        )
+
+
+class ConfirmingModel:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.messages_after_approval: list[dict] = []
+
+    def complete(self, messages):
+        self.calls += 1
+        if self.calls == 1:
+            return type(
+                "Parsed",
+                (),
+                {
+                    "assistant_message": {"role": "assistant", "content": ""},
+                    "final_text": None,
+                    "tool_calls": [
+                        ToolCall(
+                            tool_call_id="call_confirm",
+                            name="bash",
+                            bash=BashAction(command="printf approved"),
+                        )
+                    ],
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                },
+            )()
+        self.messages_after_approval = messages
+        return type(
+            "Parsed",
+            (),
+            {
+                "assistant_message": {"role": "assistant", "content": "approved"},
+                "final_text": "approved",
+                "tool_calls": [],
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+            },
+        )()
+
+    def tool_result_message(self, tool_call_id: str, content: str | ToolResult):
+        if isinstance(content, ToolResult):
+            content = content.model_dump_json(exclude_none=True)
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+
+
+class RecordingRuntime:
+    def __init__(self) -> None:
+        self.actions: list[ToolCall] = []
+
+    async def execute(self, tool_call: ToolCall) -> ToolResult:
+        self.actions.append(tool_call)
+        return ToolResult(output="approved")
+
+
+@pytest.mark.asyncio
+async def test_agent_loop_runs_tool_and_returns_final_text() -> None:
+    runtime = MockRuntime()
+    agent = AgentCore(
+        model=FakeModel(),
+        runtime=runtime,
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+    )
+
+    result = await agent.run("take a screenshot")
+
+    assert result.status == "completed"
+    assert result.final_text == "done"
+    assert result.total_tokens == 30
+    assert len(runtime.actions) == 1
+
+
+@pytest.mark.asyncio
+async def test_agent_stops_when_estimated_cost_exceeds_budget() -> None:
+    agent = AgentCore(
+        model=ExpensiveModel(),
+        runtime=MockRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+        cost_budget_usd=0.50,
+        input_usd_per_mtok=1.00,
+        output_usd_per_mtok=0,
+    )
+
+    result = await agent.run("expensive task")
+
+    assert result.status == "failed"
+    assert result.final_text == "cost budget exceeded"
+    assert result.estimated_cost_usd == 1.0
+
+
+@pytest.mark.asyncio
+async def test_agent_omits_duplicate_screenshot_base64_by_hash() -> None:
+    model = RepeatScreenshotModel()
+    agent = AgentCore(
+        model=model,
+        runtime=StableScreenshotRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+    )
+
+    result = await agent.run("take repeated screenshots")
+
+    assert result.status == "completed"
+    assert result.prompt_cache_hit_tokens == 21
+    assert result.prompt_cache_miss_tokens == 9
+    first_tool_result = json.loads(model.tool_messages[0]["content"])
+    second_tool_result = json.loads(model.tool_messages[1]["content"])
+    assert first_tool_result["base64_image"] == "c2FtZQ=="
+    assert second_tool_result["image_hash"] == "sha256:same"
+    assert second_tool_result["perception_cache_hit"] is True
+    assert "base64_image" not in second_tool_result
+
+
+@pytest.mark.asyncio
+async def test_agent_emits_progress_events_during_model_and_tool_steps() -> None:
+    events: list[tuple[str, str]] = []
+    agent = AgentCore(
+        model=FakeModel(),
+        runtime=MockRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+        on_event=lambda kind, message: events.append((kind, message)),
+    )
+
+    result = await agent.run("take a screenshot")
+
+    assert result.status == "completed"
+    assert ("model", "Step 1: waiting for model response") in events
+    assert ("model", "Step 1: model requested 1 tool call") in events
+    assert ("tool", "Step 1: executing computer: screenshot") in events
+    assert ("tool", "Step 1: completed computer: screenshot") in events
+    assert ("model", "Step 2: waiting for model response") in events
+
+
+@pytest.mark.asyncio
+async def test_agent_can_continue_after_confirmed_tool_call() -> None:
+    model = ConfirmingModel()
+    runtime = RecordingRuntime()
+    agent = AgentCore(
+        model=model,
+        runtime=runtime,
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+    )
+
+    waiting = await agent.run("run a shell command")
+
+    assert waiting.status == "waiting_for_confirmation"
+    assert waiting.pending_tool_call is not None
+    assert waiting.pending_tool_call.bash is not None
+    assert waiting.agent_messages
+
+    completed = await agent.continue_after_confirmation(
+        messages=waiting.agent_messages,
+        pending_tool_call=waiting.pending_tool_call,
+        steps=waiting.steps,
+        prompt_tokens=waiting.prompt_tokens,
+        completion_tokens=waiting.completion_tokens,
+        total_tokens=waiting.total_tokens,
+        prompt_cache_hit_tokens=waiting.prompt_cache_hit_tokens,
+        prompt_cache_miss_tokens=waiting.prompt_cache_miss_tokens,
+        estimated_cost_usd=waiting.estimated_cost_usd,
+    )
+
+    assert completed.status == "completed"
+    assert completed.final_text == "approved"
+    assert runtime.actions[0].bash is not None
+    assert any(message["role"] == "tool" for message in model.messages_after_approval)
