@@ -106,6 +106,7 @@ export function ChatPanel({ onCreateRun, onVoiceRunCommand, apiReady }: Props) {
           onClick={voiceInput.startListening}
         >
           <Mic size={16} aria-hidden="true" />
+          <span>Voice</span>
         </button>
       </div>
       <textarea id="task" value={task} onChange={(event) => setTask(event.target.value)} />

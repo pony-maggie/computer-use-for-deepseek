@@ -9,7 +9,7 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - Normal user entry: configure `DEEPSEEK_API_KEY`, run `./start.sh`, use `http://localhost:3000`, stop with `./stop.sh`.
 - Docker is required by the app but should remain an implementation detail for normal users.
 - File handling model: upload files into an explicit run workspace, process inside the sandbox, download results from the web UI.
-- The project is a git repository on branch `feature/project-scaffold`.
+- The project is a git repository on branch `main`.
 
 ## Key Decisions
 
@@ -224,3 +224,25 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - 2026-05-17: `docker compose config` passed.
 - 2026-05-17: `docker compose -f docker-compose.yml -f docker-compose.dev.yml config` passed.
 - 2026-05-17: `python3 -m py_compile runtime/daemon.py && python3 -m json.tool feature_list.json` passed.
+
+## 2026-05-22 Voice Input Visibility Fix
+
+- Investigated why the voice feature was not obvious in the Web UI.
+- Confirmed the voice input code existed and the browser-rendered UI had only a small microphone icon in the `Task` header.
+- Added a visible `Voice` label next to the microphone icon and widened the button so the voice entry point is clear.
+- Added a ChatPanel test that failed before the visibility fix and passes after it.
+- Updated `init.sh` to require the current 2026-05-22 voice input spec and plan instead of missing 2026-05-17 plan files.
+- Note: `start.sh` uses prebuilt GHCR images by default, so a user running a stale published Web image may not see local source changes until the Web image is rebuilt/published or the dev compose overlay is used.
+- 2026-05-22: `cd web && npm test -- ChatPanel.test.tsx` failed before the fix because no visible `Voice` text was rendered.
+- 2026-05-22: `cd web && npm test -- ChatPanel.test.tsx` passed with 8 tests after the fix.
+- 2026-05-22: `cd web && npm test` passed with 33 tests.
+- 2026-05-22: `cd web && npm run build` passed.
+- 2026-05-22: `./init.sh` passed after updating the required plan/spec paths.
+- 2026-05-22: `python3 -m json.tool feature_list.json` passed.
+- 2026-05-22: DevTools browser verification at `http://127.0.0.1:3000/` showed the `Voice` button next to the task field after reload.
+
+## 2026-05-22 Startup Simplification
+
+- Removed the legacy local-test startup script because it was easy to confuse with the normal user startup path.
+- Updated the English and Chinese README files so the user-facing startup instructions only present `./start.sh` and `./stop.sh`.
+- This keeps normal startup aligned with the prebuilt-image flow and leaves local development to the explicit compose override already documented for developers.

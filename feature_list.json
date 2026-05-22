@@ -145,6 +145,14 @@
       "status": "done",
       "dependencies": ["feat-016", "feat-017"],
       "evidence": "AgentCore cost budget enforcement, prompt cache token accounting, screenshot hash compaction, browser_snapshot tool action, RunState/UI budget fields, and routing config implemented. Backend pytest passed with 28 tests. Frontend npm run build passed. ./init.sh passed. Compose config, dev overlay config, runtime daemon py_compile, and feature_list JSON validation passed."
+    },
+    {
+      "id": "feat-019",
+      "name": "Voice input visibility fix",
+      "description": "Make the browser voice input entry point obvious in the task panel and keep the harness aligned with the current voice input plan.",
+      "status": "done",
+      "dependencies": ["feat-018"],
+      "evidence": "ChatPanel now renders a visible Voice label beside the microphone icon. Targeted ChatPanel test failed before the change and passed after it. Full frontend test suite and build passed."
     }
   ]
 }

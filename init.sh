@@ -9,8 +9,8 @@ required_files=(
   "progress.md"
   "README.md"
   "README.zh-CN.md"
-  "docs/superpowers/specs/2026-05-17-deepseek-computer-use-design.md"
-  "docs/superpowers/plans/2026-05-17-deepseek-computer-use.md"
+  "docs/superpowers/specs/2026-05-22-voice-input-design.md"
+  "docs/superpowers/plans/2026-05-22-voice-input.md"
 )
 
 for file in "${required_files[@]}"; do

@@ -55,6 +55,15 @@ function emitVoiceResult(transcript: string) {
 }
 
 describe("ChatPanel voice input", () => {
+  it("shows a visible voice entry point near the task field", () => {
+    vi.stubGlobal("window", { webkitSpeechRecognition: FakeRecognition });
+
+    render(<ChatPanel apiReady={true} onCreateRun={vi.fn()} onVoiceRunCommand={vi.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Start voice input" })).toBeTruthy();
+    expect(screen.getByText("Voice")).toBeTruthy();
+  });
+
   it("adds recognized speech to the task field without creating a run", () => {
     vi.stubGlobal("window", { webkitSpeechRecognition: FakeRecognition });
     const onCreateRun = vi.fn();

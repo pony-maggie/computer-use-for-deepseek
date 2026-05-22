@@ -66,7 +66,7 @@ body {
 }
 
 .icon-button {
-  width: 36px;
+  min-width: 36px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -75,6 +75,10 @@ body {
 
 .voice-button {
   flex: 0 0 auto;
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  font-weight: 650;
 }
 
 .voice-button:not(:disabled):hover {
