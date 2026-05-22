@@ -101,9 +101,9 @@ For safety, the app does not mount your entire home directory by default.
 
 ## Voice Input
 
-The Web UI supports lightweight browser voice input for the task box and a small set of explicit task-control commands. Click the microphone button, allow microphone access, speak a task, then review or edit the recognized text. You can also say short commands such as `create run`, `start run`, `pause`, `resume`, `cancel`, or `clear input`.
+The Web UI supports browser voice input for the task box and a small set of explicit task-control commands. Click the microphone button, allow microphone access, speak naturally, and the app will use the transcript to separate task text from UI actions. You can say things like `打开浏览器，访问 baidu.com，开始运行` or `create run`, `start run`, `pause`, `resume`, `cancel`, and `clear input`.
 
-Voice control only uses the existing Web UI actions. It cannot approve or reject pending confirmations by voice, and it cannot control the sandbox runtime directly. Chrome and Edge provide the best browser support.
+Voice control only uses the existing Web UI actions. It can create a run, start the current run, pause, resume, cancel, or clear the task box, but it cannot approve or reject pending confirmations by voice, and it cannot control the sandbox runtime directly. Chrome and Edge provide the best browser support.
 
 ## Common Settings
 

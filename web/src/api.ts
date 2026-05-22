@@ -5,6 +5,26 @@ const API_BASE = `${API_ORIGIN}/api`;
 const API_UNREACHABLE_MESSAGE =
   "Backend API is still starting or is unreachable. Wait a moment, then try again.";
 
+export type VoiceInterpretRequest = {
+  transcript: string;
+  language: string;
+  current_task: string;
+  run_status: string | null;
+  has_pending_confirmation: boolean;
+};
+
+export type VoiceInterpretation = {
+  task_text_delta: string;
+  actions: Array<"create_run" | "start_run" | "pause_run" | "resume_run" | "cancel_run" | "clear_input">;
+  manual_confirmation_required: boolean;
+  message: string | null;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  prompt_cache_hit_tokens?: number;
+  prompt_cache_miss_tokens?: number;
+};
+
 async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init);
@@ -30,6 +50,16 @@ export async function createRun(task: string): Promise<Run> {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ task }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
+export async function interpretVoice(request: VoiceInterpretRequest): Promise<VoiceInterpretation> {
+  const response = await fetchApi(`${API_BASE}/voice/interpret`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
   });
   if (!response.ok) throw new Error(await response.text());
   return response.json();

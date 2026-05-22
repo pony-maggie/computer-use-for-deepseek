@@ -257,3 +257,18 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - Changed browser voice input to default to `zh-CN` when the browser language starts with `zh`, otherwise `en-US`.
 - Added regression coverage for Chinese browser locale detection in the voice input hook.
 - Verified with `cd web && npm test` and `cd web && npm run build` after the change.
+
+## 2026-05-22 Voice Natural Language Actions
+
+- Added a backend `/api/voice/interpret` endpoint that uses DeepSeek to convert natural speech transcripts into structured task text and a fixed set of UI actions.
+- Voice parsing now understands mixed utterances such as `打开浏览器，访问 baidu.com，开始运行` and routes them to the existing `Create Run` and `Start` button flows.
+- `approve` and `reject` remain manual-only and are surfaced as a warning instead of an automatic action.
+- Updated the Web UI voice flow to call the backend parser before executing actions, with a local command fallback if the parser endpoint is unavailable.
+- Updated user docs to explain natural-language voice behavior and the manual confirmation boundary.
+- Verification completed:
+  - `cd server && . .venv/bin/activate && pytest tests/test_voice_parser.py tests/test_api_routes.py -v`
+  - `cd server && . .venv/bin/activate && pytest -v`
+  - `cd web && npm test -- api.test.ts ChatPanel.test.tsx`
+  - `cd web && npm test`
+  - `cd web && npm run build`
+  - `./init.sh`

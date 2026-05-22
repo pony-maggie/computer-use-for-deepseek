@@ -16,6 +16,7 @@ from deepseek_computer_use.runtime.docker_runtime import DockerRuntime
 from deepseek_computer_use.runtime.mock_runtime import MockRuntime
 from deepseek_computer_use.runtime.run_scoped_runtime import RunScopedRuntime
 from deepseek_computer_use.safety.policy import SafetyPolicy
+from deepseek_computer_use.voice.parser import VoiceIntentParser, VoiceInterpretation
 from deepseek_computer_use.workspace.manager import WorkspaceManager
 
 
@@ -30,6 +31,14 @@ def _utc_now() -> str:
 
 class CreateRunRequest(BaseModel):
     task: str
+
+
+class VoiceInterpretRequest(BaseModel):
+    transcript: str
+    language: str = ""
+    current_task: str = ""
+    run_status: str | None = None
+    has_pending_confirmation: bool = False
 
 
 class RunState(BaseModel):
@@ -68,6 +77,18 @@ def create_run(request: CreateRunRequest) -> RunState:
         events=[{"kind": "created", "message": "Run created"}],
     )
     return runs[run_id]
+
+
+@router.post("/voice/interpret", response_model=VoiceInterpretation)
+def interpret_voice(request: VoiceInterpretRequest) -> VoiceInterpretation:
+    parser = _build_voice_intent_parser()
+    return parser.interpret(
+        transcript=request.transcript,
+        language=request.language or "en-US",
+        current_task=request.current_task,
+        run_status=request.run_status,
+        has_pending_confirmation=request.has_pending_confirmation,
+    )
 
 
 @router.get("/runs/{run_id}", response_model=RunState)
@@ -204,6 +225,14 @@ def _get_run(run_id: str) -> RunState:
     if run is None:
         raise HTTPException(status_code=404, detail="run not found")
     return run
+
+
+def _build_voice_intent_parser() -> VoiceIntentParser:
+    return VoiceIntentParser(
+        model=settings.deepseek_fast_model or settings.deepseek_model,
+        api_key=settings.deepseek_api_key,
+        base_url=settings.deepseek_base_url,
+    )
 
 
 def _append_event(run: RunState, kind: str, message: str) -> None:

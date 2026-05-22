@@ -128,6 +128,8 @@ export default function App() {
           onCreateRun={onCreateRun}
           onVoiceRunCommand={onVoiceRunCommand}
           apiReady={apiReady}
+          runStatus={status}
+          hasPendingConfirmation={status === "waiting_for_confirmation"}
         />
         <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
       </aside>

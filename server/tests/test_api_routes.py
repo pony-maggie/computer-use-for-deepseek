@@ -4,6 +4,7 @@ from deepseek_computer_use.api.routes import RunState, runs
 from deepseek_computer_use.agent.events import AgentRunResult
 from deepseek_computer_use.main import create_app
 from deepseek_computer_use.models.protocol import BashAction, ToolCall
+from deepseek_computer_use.voice.parser import VoiceInterpretation
 
 
 def test_create_run_endpoint() -> None:
@@ -24,6 +25,42 @@ def test_create_run_endpoint() -> None:
     assert "pending_confirmation_summary" in response.json()
     assert "created_at" in response.json()
     assert "updated_at" in response.json()
+
+
+def test_voice_interpret_endpoint(monkeypatch) -> None:
+    client = TestClient(create_app())
+
+    class FakeParser:
+        def interpret(self, **kwargs):
+            assert kwargs["transcript"] == "打开浏览器，访问 baidu.com，开始运行"
+            assert kwargs["language"] == "zh-CN"
+            return VoiceInterpretation(
+                task_text_delta="打开浏览器，访问 baidu.com",
+                actions=["create_run", "start_run"],
+                manual_confirmation_required=False,
+                message=None,
+            )
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._build_voice_intent_parser",
+        lambda: FakeParser(),
+    )
+
+    response = client.post(
+        "/api/voice/interpret",
+        json={
+            "transcript": "打开浏览器，访问 baidu.com，开始运行",
+            "language": "zh-CN",
+            "current_task": "",
+            "run_status": "created",
+            "has_pending_confirmation": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["task_text_delta"] == "打开浏览器，访问 baidu.com"
+    assert response.json()["actions"] == ["create_run", "start_run"]
+    assert response.json()["manual_confirmation_required"] is False
 
 
 def test_get_run_endpoint_returns_current_run_state() -> None:

@@ -153,6 +153,14 @@
       "status": "done",
       "dependencies": ["feat-018"],
       "evidence": "ChatPanel now renders a visible Voice label beside the microphone icon. Targeted ChatPanel test failed before the change and passed after it. Full frontend test suite and build passed."
+    },
+    {
+      "id": "feat-020",
+      "name": "Voice natural language actions",
+      "description": "Use DeepSeek to interpret natural speech into task text plus constrained UI actions, route mixed voice requests through the existing Create Run and run-control buttons, and keep approval and rejection manual only.",
+      "status": "done",
+      "dependencies": ["feat-019"],
+      "evidence": "Backend /api/voice/interpret endpoint added with model parsing and local fallback. Frontend voice flow now calls the parser before executing UI actions. Server pytest passed with 61 tests. Web vitest passed with 36 tests. Web build passed. ./init.sh passed."
     }
   ]
 }
