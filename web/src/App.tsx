@@ -16,7 +16,7 @@ import { ComputerPanel } from "./components/ComputerPanel";
 import { RunControls } from "./components/RunControls";
 import { Timeline } from "./components/Timeline";
 import { WorkspacePanel } from "./components/WorkspacePanel";
-import type { RunAction } from "./components/runControlState";
+import { getRunControlState, type RunAction } from "./components/runControlState";
 import type { Run, RunEvent } from "./types";
 import "./styles.css";
 
@@ -96,11 +96,39 @@ export default function App() {
     }
   }
 
+  async function onVoiceRunCommand(
+    actionName: Extract<RunAction, "start" | "pause" | "resume" | "cancel">,
+  ): Promise<string | null> {
+    if (!runId) return "Create a run before using voice run controls.";
+    const controls = getRunControlState(status, Boolean(runId), pendingRunAction);
+    const allowed = {
+      start: controls.canStart,
+      pause: controls.canPause,
+      resume: controls.canResume,
+      cancel: controls.canCancel,
+    };
+    if (!allowed[actionName]) {
+      return `Voice command "${actionName}" is not available while the run is ${status}.`;
+    }
+    const actions = {
+      start: startRun,
+      pause: pauseRun,
+      resume: resumeRun,
+      cancel: cancelRun,
+    };
+    await updateRun(actionName, actions[actionName]);
+    return null;
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
         <h1>Computer Use for DeepSeek</h1>
-        <ChatPanel onCreateRun={onCreateRun} apiReady={apiReady} />
+        <ChatPanel
+          onCreateRun={onCreateRun}
+          onVoiceRunCommand={onVoiceRunCommand}
+          apiReady={apiReady}
+        />
         <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
       </aside>
       <section className="workspace">

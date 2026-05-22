@@ -58,6 +58,30 @@ body {
   gap: 10px;
 }
 
+.task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.icon-button {
+  width: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-button {
+  flex: 0 0 auto;
+}
+
+.voice-button:not(:disabled):hover {
+  border-color: #667085;
+  background: #f9fafb;
+}
+
 textarea {
   min-height: 130px;
   resize: vertical;
