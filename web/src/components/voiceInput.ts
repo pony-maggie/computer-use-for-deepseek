@@ -36,7 +36,7 @@ export type SpeechRecognitionErrorEventLike = {
   error?: string;
 };
 
-type SpeechRecognitionWindow = {
+export type SpeechRecognitionWindow = {
   SpeechRecognition?: BrowserSpeechRecognitionConstructor;
   webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
 };

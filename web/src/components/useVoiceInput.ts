@@ -3,6 +3,7 @@ import {
   getSpeechRecognitionConstructor,
   mapSpeechRecognitionError,
   type BrowserSpeechRecognition,
+  type SpeechRecognitionWindow,
   type VoiceInputStatus,
 } from "./voiceInput";
 
@@ -23,7 +24,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const constructor = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return getSpeechRecognitionConstructor(window);
+    return getSpeechRecognitionConstructor(window as unknown as SpeechRecognitionWindow);
   }, []);
   const supported = constructor !== null;
   const [status, setStatus] = useState<VoiceInputStatus>(supported ? "idle" : "error");
