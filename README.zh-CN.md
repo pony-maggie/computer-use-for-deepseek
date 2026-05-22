@@ -62,6 +62,14 @@ DEEPSEEK_API_KEY=你的_api_key
 ./start.sh
 ```
 
+如果你是在本地反复测试，希望每次干净重启，可以运行：
+
+```bash
+./start-local-test.sh
+```
+
+它会先停止已有 Compose 服务，清理占用应用端口的进程，再重新启动应用并等待后端 API 就绪。
+
 看到 `Backend API is ready.` 后打开：
 
 ```text

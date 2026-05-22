@@ -62,6 +62,14 @@ Run:
 ./start.sh
 ```
 
+For local testing with a clean restart, use:
+
+```bash
+./start-local-test.sh
+```
+
+This stops existing Compose services, clears processes listening on the app ports, starts the app again, and waits for the backend API.
+
 After you see `Backend API is ready.`, open:
 
 ```text
