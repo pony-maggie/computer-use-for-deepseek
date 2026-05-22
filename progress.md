@@ -251,3 +251,9 @@ This file is the project memory for future agent sessions. Update it whenever sc
 
 - Updated `start.sh` to run `docker compose pull` before `docker compose up -d`, so the normal startup path fetches the latest published images instead of reusing stale local cache.
 - Added a short note to the English and Chinese README files explaining that startup now pulls the latest published images before launching services.
+
+## 2026-05-22 Voice Locale Fix
+
+- Changed browser voice input to default to `zh-CN` when the browser language starts with `zh`, otherwise `en-US`.
+- Added regression coverage for Chinese browser locale detection in the voice input hook.
+- Verified with `cd web && npm test` and `cd web && npm run build` after the change.

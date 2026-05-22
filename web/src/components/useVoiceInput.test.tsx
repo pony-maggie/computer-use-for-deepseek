@@ -88,6 +88,19 @@ describe("useVoiceInput", () => {
     expect(result.current.status).toBe("idle");
   });
 
+  it("defaults to zh-CN for Chinese browser locales", () => {
+    vi.stubGlobal("window", { webkitSpeechRecognition: FakeRecognition });
+    vi.stubGlobal("navigator", { language: "zh-CN" });
+
+    const { result } = renderHook(() => useVoiceInput());
+
+    act(() => {
+      result.current.startListening();
+    });
+
+    expect(FakeRecognition.latest?.lang).toBe("zh-CN");
+  });
+
   it("reports browser recognition errors", () => {
     vi.stubGlobal("window", { webkitSpeechRecognition: FakeRecognition });
     const { result } = renderHook(() => useVoiceInput());

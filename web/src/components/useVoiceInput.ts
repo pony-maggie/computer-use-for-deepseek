@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   getSpeechRecognitionConstructor,
+  getDefaultVoiceLanguage,
   mapSpeechRecognitionError,
   type BrowserSpeechRecognition,
   type SpeechRecognitionWindow,
@@ -20,13 +21,18 @@ type UseVoiceInputResult = {
 };
 
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
-  const { lang = "en-US", onText } = options;
+  const { lang, onText } = options;
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const constructor = useMemo(() => {
     if (typeof window === "undefined") return null;
     return getSpeechRecognitionConstructor(window as unknown as SpeechRecognitionWindow);
   }, []);
   const supported = constructor !== null;
+  const defaultLanguage = getDefaultVoiceLanguage(
+    typeof window === "undefined"
+      ? undefined
+      : window.navigator?.language ?? globalThis.navigator?.language,
+  );
   const [status, setStatus] = useState<VoiceInputStatus>(supported ? "idle" : "error");
   const [error, setError] = useState<string | null>(
     supported ? null : "Voice input is not supported in this browser.",
@@ -43,7 +49,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = lang;
+    recognition.lang = lang ?? defaultLanguage;
     recognition.onstart = () => {
       setError(null);
       setStatus("listening");
@@ -74,7 +80,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       setStatus("error");
       setError("Speech recognition could not start. You can keep typing manually.");
     }
-  }, [constructor, lang, onText]);
+  }, [constructor, defaultLanguage, lang, onText]);
 
   return {
     supported,

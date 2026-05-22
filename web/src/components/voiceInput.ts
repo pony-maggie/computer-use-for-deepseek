@@ -49,6 +49,14 @@ export function appendRecognizedText(currentTask: string, recognizedText: string
   return `${normalizedCurrent} ${normalizedText}`;
 }
 
+export function getDefaultVoiceLanguage(preferredLanguage?: string): string {
+  const language = (preferredLanguage ?? "").trim().toLowerCase();
+  if (language.startsWith("zh")) {
+    return "zh-CN";
+  }
+  return "en-US";
+}
+
 const voiceCommandPhrases: Record<string, VoiceCommand> = {
   "创建任务": "create_run",
   "创建 run": "create_run",
