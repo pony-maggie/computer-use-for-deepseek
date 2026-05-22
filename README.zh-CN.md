@@ -96,6 +96,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 出于安全考虑，应用默认不会挂载你的整个用户目录。
 
+## 语音输入
+
+Web UI 支持轻量的浏览器语音输入和少量明确的任务控制命令。点击任务输入框旁边的麦克风按钮，允许浏览器使用麦克风，说出任务后，识别文本会进入任务输入框，你可以继续编辑。你也可以说 `创建任务`、`开始运行`、`暂停`、`继续`、`取消`、`清空输入` 这类短命令。
+
+语音控制只调用已有 Web UI 动作。它不能用语音批准或拒绝待确认动作，也不能直接控制沙箱 runtime。Chrome 和 Edge 的支持最好。
+
 ## 常用配置
 
 大多数用户只需要配置 `DEEPSEEK_API_KEY`。
@@ -112,6 +118,8 @@ APP_TOKEN_BUDGET=2000000
 APP_COST_BUDGET_USD=0
 DEEPSEEK_INPUT_USD_PER_MTOK=0
 DEEPSEEK_OUTPUT_USD_PER_MTOK=0
+VOICE_INPUT_ENABLED=true
+VOICE_PROVIDER=browser
 APP_RUNTIME_MODE=docker
 RUNTIME_IMAGE=ghcr.io/pony-maggie/computer-use-for-deepseek-runtime:latest
 ```

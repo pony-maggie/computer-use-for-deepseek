@@ -96,6 +96,12 @@ Use the web app to upload files into a task workspace. The AI can read and edit 
 
 For safety, the app does not mount your entire home directory by default.
 
+## Voice Input
+
+The Web UI supports lightweight browser voice input for the task box and a small set of explicit task-control commands. Click the microphone button, allow microphone access, speak a task, then review or edit the recognized text. You can also say short commands such as `create run`, `start run`, `pause`, `resume`, `cancel`, or `clear input`.
+
+Voice control only uses the existing Web UI actions. It cannot approve or reject pending confirmations by voice, and it cannot control the sandbox runtime directly. Chrome and Edge provide the best browser support.
+
 ## Common Settings
 
 Most users only need `DEEPSEEK_API_KEY`.
@@ -112,6 +118,8 @@ APP_TOKEN_BUDGET=2000000
 APP_COST_BUDGET_USD=0
 DEEPSEEK_INPUT_USD_PER_MTOK=0
 DEEPSEEK_OUTPUT_USD_PER_MTOK=0
+VOICE_INPUT_ENABLED=true
+VOICE_PROVIDER=browser
 APP_RUNTIME_MODE=docker
 RUNTIME_IMAGE=ghcr.io/pony-maggie/computer-use-for-deepseek-runtime:latest
 ```
