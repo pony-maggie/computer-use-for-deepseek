@@ -62,6 +62,8 @@ Run:
 ./start.sh
 ```
 
+The startup script pulls the latest published images before starting services, so you get the newest shipped UI on each run.
+
 After you see `Backend API is ready.`, open:
 
 ```text

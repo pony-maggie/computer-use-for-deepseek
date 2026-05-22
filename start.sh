@@ -18,6 +18,7 @@ if ! grep -q '^DEEPSEEK_API_KEY=..*' .env; then
   exit 1
 fi
 
+docker compose pull
 docker compose up -d
 
 echo "Computer Use for DeepSeek is starting. Waiting for the backend API..."

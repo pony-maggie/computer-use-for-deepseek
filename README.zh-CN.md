@@ -62,6 +62,8 @@ DEEPSEEK_API_KEY=你的_api_key
 ./start.sh
 ```
 
+启动脚本会先拉取最新发布的镜像，再启动服务，这样每次启动都能拿到最新上线的界面。
+
 看到 `Backend API is ready.` 后打开：
 
 ```text

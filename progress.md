@@ -246,3 +246,8 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - Removed the legacy local-test startup script because it was easy to confuse with the normal user startup path.
 - Updated the English and Chinese README files so the user-facing startup instructions only present `./start.sh` and `./stop.sh`.
 - This keeps normal startup aligned with the prebuilt-image flow and leaves local development to the explicit compose override already documented for developers.
+
+## 2026-05-22 Fresh Image Startup Fix
+
+- Updated `start.sh` to run `docker compose pull` before `docker compose up -d`, so the normal startup path fetches the latest published images instead of reusing stale local cache.
+- Added a short note to the English and Chinese README files explaining that startup now pulls the latest published images before launching services.
