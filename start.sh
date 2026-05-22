@@ -19,7 +19,7 @@ if ! grep -q '^DEEPSEEK_API_KEY=..*' .env; then
 fi
 
 docker compose pull
-docker compose up -d
+docker compose up -d --force-recreate
 
 echo "Computer Use for DeepSeek is starting. Waiting for the backend API..."
 deadline=$((SECONDS + 300))

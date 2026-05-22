@@ -63,6 +63,7 @@ Run:
 ```
 
 The startup script pulls the latest published images before starting services, so you get the newest shipped UI on each run.
+It also recreates the Compose containers so they actually run the newly pulled images.
 
 After you see `Backend API is ready.`, open:
 
