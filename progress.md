@@ -272,3 +272,27 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `cd web && npm test`
   - `cd web && npm run build`
   - `./init.sh`
+
+## 2026-05-23 Persistent Voice Mode and Spoken Feedback
+
+- Reviewed the Medkit voice implementation as a reference.
+- Borrowed its product shape, not its infrastructure:
+  - voice is a persistent mode rather than one-shot push-to-talk;
+  - voice has visible listening/thinking/speaking-style state;
+  - speech feedback and transcript-style acknowledgement are part of the loop;
+  - user language preference is remembered.
+- Kept this project on browser Web Speech APIs instead of adding LiveKit, Deepgram, or Cartesia dependencies.
+- Updated the Web UI voice flow:
+  - `Voice` is now a mode toggle that keeps recognition active and restarts it while enabled;
+  - users can choose `zh-CN` or `en-US` for recognition, and the selection is stored in localStorage;
+  - browser speech synthesis reads back interpreted task intent, planned UI actions, manual confirmation warnings, and clarification prompts.
+- Updated the backend voice parser schema with `needs_clarification` so ambiguous speech can ask a short question without executing actions.
+- Preserved the safety boundary: approval and rejection remain manual-only.
+- Verification completed:
+  - `cd server && . .venv/bin/activate && pytest tests/test_voice_parser.py -v`
+  - `cd web && npm test -- ChatPanel.test.tsx useVoiceInput.test.tsx voiceInput.test.ts`
+  - `cd server && . .venv/bin/activate && pytest -v`
+  - `cd web && npm test`
+  - `cd web && npm run build`
+  - `python3 -m json.tool feature_list.json`
+  - `./init.sh`

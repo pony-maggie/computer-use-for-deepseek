@@ -60,6 +60,7 @@ class VoiceInterpretation(BaseModel):
     task_text_delta: str = ""
     actions: list[VoiceActionName] = Field(default_factory=list)
     manual_confirmation_required: bool = False
+    needs_clarification: bool = False
     message: str | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -83,7 +84,7 @@ class VoiceInterpretation(BaseModel):
 
     @model_validator(mode="after")
     def _normalize_confirmation(self) -> "VoiceInterpretation":
-        if self.manual_confirmation_required:
+        if self.manual_confirmation_required or self.needs_clarification:
             self.actions = []
         if any(action not in _allowed_actions for action in self.actions):
             self.actions = [action for action in self.actions if action in _allowed_actions]
@@ -148,13 +149,16 @@ class VoiceIntentParser:
     ) -> list[dict[str, str]]:
         system_prompt = (
             "You convert speech transcripts into structured UI intent for Computer Use for DeepSeek. "
-            "Return strict JSON only with keys task_text_delta, actions, manual_confirmation_required, and message. "
+            "Return strict JSON only with keys task_text_delta, actions, manual_confirmation_required, "
+            "needs_clarification, and message. "
             "Allowed actions are create_run, start_run, pause_run, resume_run, cancel_run, and clear_input. "
             "Never emit approve or reject actions. If the user asks to approve or reject a confirmation, set "
             "manual_confirmation_required to true and leave actions empty. If the transcript mixes task text with a "
             "start command and no run exists, include both create_run and start_run in that order. If the transcript "
             "contains only task content, return it in task_text_delta and leave actions empty. If the transcript asks "
-            "to clear the task input, return clear_input and an empty task_text_delta."
+            "to clear the task input, return clear_input and an empty task_text_delta. If the transcript is ambiguous "
+            "or does not contain enough information to safely choose a UI action, set needs_clarification to true, "
+            "leave actions empty, and put one short clarifying question in message using the user's language."
         )
         user_prompt = (
             f"language={language}\n"
@@ -199,6 +203,7 @@ class VoiceIntentParser:
             task_text_delta=str(data.get("task_text_delta", "") or "").strip(),
             actions=list(data.get("actions") or []),
             manual_confirmation_required=bool(data.get("manual_confirmation_required", False)),
+            needs_clarification=bool(data.get("needs_clarification", False)),
             message=(str(data.get("message")).strip() if data.get("message") else None),
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getSpeechRecognitionConstructor,
   getDefaultVoiceLanguage,
@@ -9,6 +9,7 @@ import {
 } from "./voiceInput";
 
 type UseVoiceInputOptions = {
+  active?: boolean;
   lang?: string;
   onText?: (text: string) => void;
 };
@@ -18,11 +19,15 @@ type UseVoiceInputResult = {
   status: VoiceInputStatus;
   error: string | null;
   startListening: () => void;
+  stopListening: () => void;
 };
 
 export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
-  const { lang, onText } = options;
+  const { active = false, lang, onText } = options;
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const activeRef = useRef(active);
+  const restartTimerRef = useRef<number | null>(null);
+  const onTextRef = useRef(onText);
   const constructor = useMemo(() => {
     if (typeof window === "undefined") return null;
     return getSpeechRecognitionConstructor(window as unknown as SpeechRecognitionWindow);
@@ -38,16 +43,47 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     supported ? null : "Voice input is not supported in this browser.",
   );
 
-  const startListening = useCallback(() => {
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+
+  useEffect(() => {
+    onTextRef.current = onText;
+  }, [onText]);
+
+  const clearRestartTimer = useCallback(() => {
+    if (restartTimerRef.current === null) return;
+    globalThis.clearTimeout(restartTimerRef.current);
+    restartTimerRef.current = null;
+  }, []);
+
+  const stopListening = useCallback(() => {
+    activeRef.current = false;
+    clearRestartTimer();
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (recognition) {
+      try {
+        recognition.stop();
+      } catch {
+        // Some browser implementations throw if stop is called after end.
+      }
+    }
+    setStatus((currentStatus) => (currentStatus === "error" ? "error" : "idle"));
+  }, [clearRestartTimer]);
+
+  const startRecognition = useCallback((persistent: boolean) => {
     if (!constructor) {
       setStatus("error");
       setError("Voice input is not supported in this browser.");
       return;
     }
+    if (recognitionRef.current) return;
 
+    clearRestartTimer();
     const recognition = new constructor();
     recognitionRef.current = recognition;
-    recognition.continuous = false;
+    recognition.continuous = persistent;
     recognition.interimResults = true;
     recognition.lang = lang ?? defaultLanguage;
     recognition.onstart = () => {
@@ -61,8 +97,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
         .filter(Boolean)
         .join(" ");
       if (finalText) {
-        onText?.(finalText);
         setStatus("transcribing");
+        onTextRef.current?.(finalText);
       }
     };
     recognition.onerror = (event) => {
@@ -71,6 +107,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     };
     recognition.onend = () => {
       recognitionRef.current = null;
+      if (persistent && activeRef.current) {
+        setStatus("idle");
+        restartTimerRef.current = globalThis.setTimeout(() => {
+          restartTimerRef.current = null;
+          if (activeRef.current) startRecognition(true);
+        }, 100);
+        return;
+      }
       setStatus((currentStatus) => (currentStatus === "error" ? "error" : "idle"));
     };
 
@@ -80,12 +124,40 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       setStatus("error");
       setError("Speech recognition could not start. You can keep typing manually.");
     }
-  }, [constructor, defaultLanguage, lang, onText]);
+  }, [clearRestartTimer, constructor, defaultLanguage, lang]);
+
+  const startListening = useCallback(() => {
+    startRecognition(false);
+  }, [startRecognition]);
+
+  useEffect(() => {
+    if (!active) {
+      stopListening();
+      activeRef.current = false;
+      return;
+    }
+    activeRef.current = true;
+    startRecognition(true);
+    return () => {
+      activeRef.current = false;
+      clearRestartTimer();
+      const recognition = recognitionRef.current;
+      recognitionRef.current = null;
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch {
+          // Ignore browsers that reject stop during teardown.
+        }
+      }
+    };
+  }, [active, clearRestartTimer, startRecognition, stopListening]);
 
   return {
     supported,
     status,
     error,
     startListening,
+    stopListening,
   };
 }

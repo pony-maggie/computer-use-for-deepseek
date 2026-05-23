@@ -79,3 +79,29 @@ def test_approval_speech_is_manual_only() -> None:
     assert result.task_text_delta == ""
     assert result.actions == []
     assert result.manual_confirmation_required is True
+
+
+def test_uncertain_speech_returns_clarifying_question_without_actions() -> None:
+    parser = VoiceIntentParser(
+        model="deepseek-v4-flash",
+        api_key="test",
+        base_url="https://api.deepseek.com",
+        client=FakeClient(
+            _model_response(
+                '{"task_text_delta":"","actions":[],"manual_confirmation_required":false,"needs_clarification":true,"message":"你想创建任务，还是直接开始运行？"}'
+            )
+        ),
+    )
+
+    result = parser.interpret(
+        transcript="那个开始一下",
+        language="zh-CN",
+        current_task="",
+        run_status="idle",
+        has_pending_confirmation=False,
+    )
+
+    assert result.task_text_delta == ""
+    assert result.actions == []
+    assert result.needs_clarification is True
+    assert result.message == "你想创建任务，还是直接开始运行？"

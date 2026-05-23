@@ -65,6 +65,33 @@ body {
   gap: 10px;
 }
 
+.voice-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-controls select {
+  height: 36px;
+  border: 1px solid #b8c0cc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1d2430;
+  padding: 0 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .icon-button {
   min-width: 36px;
   padding: 0;
@@ -84,6 +111,12 @@ body {
 .voice-button:not(:disabled):hover {
   border-color: #667085;
   background: #f9fafb;
+}
+
+.voice-button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 textarea {

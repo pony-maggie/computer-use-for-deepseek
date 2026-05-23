@@ -17,6 +17,7 @@ export type VoiceInterpretation = {
   task_text_delta: string;
   actions: Array<"create_run" | "start_run" | "pause_run" | "resume_run" | "cancel_run" | "clear_input">;
   manual_confirmation_required: boolean;
+  needs_clarification?: boolean;
   message: string | null;
   prompt_tokens?: number;
   completion_tokens?: number;

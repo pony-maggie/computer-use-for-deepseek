@@ -9,6 +9,7 @@ import type {
 
 class FakeRecognition implements BrowserSpeechRecognition {
   static latest: FakeRecognition | null = null;
+  static instances: FakeRecognition[] = [];
 
   continuous = false;
   interimResults = true;
@@ -24,6 +25,7 @@ class FakeRecognition implements BrowserSpeechRecognition {
 
   constructor() {
     FakeRecognition.latest = this;
+    FakeRecognition.instances.push(this);
   }
 
   emitResult(transcript: string) {
@@ -42,11 +44,27 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   FakeRecognition.latest = null;
+  FakeRecognition.instances = [];
   Object.defineProperty(window.navigator, "language", {
     configurable: true,
     value: "en-US",
   });
 });
+
+function stubSpeechSynthesis() {
+  const speak = vi.fn();
+  class FakeUtterance {
+    text: string;
+    lang = "";
+
+    constructor(text: string) {
+      this.text = text;
+    }
+  }
+  vi.stubGlobal("speechSynthesis", { cancel: vi.fn(), speak });
+  vi.stubGlobal("SpeechSynthesisUtterance", FakeUtterance);
+  return speak;
+}
 
 function taskInput() {
   return screen.getByLabelText("Task") as HTMLTextAreaElement;
@@ -62,6 +80,7 @@ function mockVoiceInterpretation(response: {
   task_text_delta: string;
   actions: Array<"create_run" | "start_run" | "pause_run" | "resume_run" | "cancel_run" | "clear_input">;
   manual_confirmation_required: boolean;
+  needs_clarification?: boolean;
   message: string | null;
 }) {
   vi.stubGlobal(
@@ -106,8 +125,40 @@ describe("ChatPanel voice input", () => {
 
     renderPanel();
 
-    expect(screen.getByRole("button", { name: "Start voice input" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Turn voice mode on" })).toBeTruthy();
     expect(screen.getByText("Voice")).toBeTruthy();
+  });
+
+  it("keeps voice mode on, uses the selected language, and speaks the parsed intent", async () => {
+    vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    const speak = stubSpeechSynthesis();
+    setBrowserLanguage("en-US");
+    mockVoiceInterpretation({
+      task_text_delta: "打开浏览器，访问 baidu.com",
+      actions: ["create_run", "start_run"],
+      manual_confirmation_required: false,
+      message: null,
+    });
+    const onCreateRun = vi.fn().mockResolvedValue(undefined);
+    const onVoiceRunCommand = vi.fn().mockResolvedValue(undefined);
+
+    renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "created" });
+
+    fireEvent.change(screen.getByLabelText("Voice language"), {
+      target: { value: "zh-CN" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+
+    expect(FakeRecognition.latest?.lang).toBe("zh-CN");
+    expect(screen.getByRole("button", { name: "Turn voice mode off" })).toBeTruthy();
+
+    emitVoiceResult("打开浏览器，访问 baidu.com，开始运行");
+
+    await waitFor(() => expect(onCreateRun).toHaveBeenCalledWith("打开浏览器，访问 baidu.com"));
+    await waitFor(() => expect(onVoiceRunCommand).toHaveBeenCalledWith("start"));
+    expect(speak).toHaveBeenCalled();
+    expect((speak.mock.calls[0][0] as { text: string; lang: string }).lang).toBe("zh-CN");
+    expect((speak.mock.calls[0][0] as { text: string }).text).toContain("我理解为");
   });
 
   it("adds recognized speech to the task field without creating a run", async () => {
@@ -123,7 +174,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun });
 
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("open example.com");
 
     await waitFor(() => expect(taskInput().value).toBe("open example.com"));
@@ -145,7 +196,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("and tell me the page title");
 
     await waitFor(() =>
@@ -184,7 +235,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("创建任务");
 
     await waitFor(() => expect(onCreateRun).toHaveBeenCalledWith("open example.com"));
@@ -204,7 +255,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "created" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("打开浏览器，访问 baidu.com，开始运行");
 
     await waitFor(() => expect(onCreateRun).toHaveBeenCalledWith("打开浏览器，访问 baidu.com"));
@@ -224,7 +275,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onVoiceRunCommand });
 
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("开始运行");
 
     await waitFor(() => expect(onVoiceRunCommand).toHaveBeenCalledWith("start"));
@@ -245,7 +296,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("清空输入");
 
     await waitFor(() => expect(taskInput().value).toBe(""));
@@ -264,12 +315,42 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onVoiceRunCommand, runStatus: "waiting_for_confirmation", hasPendingConfirmation: true });
 
-    fireEvent.click(screen.getByRole("button", { name: "Start voice input" }));
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
     emitVoiceResult("批准");
 
     await waitFor(() =>
       expect(screen.getByText("Please approve or reject pending confirmations manually.")).toBeTruthy(),
     );
+    expect(onVoiceRunCommand).not.toHaveBeenCalled();
+  });
+
+  it("speaks a clarifying question when the model is unsure", async () => {
+    vi.stubGlobal("webkitSpeechRecognition", FakeRecognition);
+    const speak = stubSpeechSynthesis();
+    setBrowserLanguage("zh-CN");
+    mockVoiceInterpretation({
+      task_text_delta: "",
+      actions: [],
+      manual_confirmation_required: false,
+      needs_clarification: true,
+      message: "你想创建任务，还是直接开始运行？",
+    });
+    const onCreateRun = vi.fn();
+    const onVoiceRunCommand = vi.fn();
+
+    renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "idle" });
+
+    fireEvent.change(screen.getByLabelText("Voice language"), {
+      target: { value: "zh-CN" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    emitVoiceResult("那个开始一下");
+
+    await waitFor(() => expect(speak).toHaveBeenCalled());
+    expect((speak.mock.calls[0][0] as { text: string }).text).toBe(
+      "你想创建任务，还是直接开始运行？",
+    );
+    expect(onCreateRun).not.toHaveBeenCalled();
     expect(onVoiceRunCommand).not.toHaveBeenCalled();
   });
 });

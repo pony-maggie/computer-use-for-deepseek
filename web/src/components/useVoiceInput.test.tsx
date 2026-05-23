@@ -9,6 +9,7 @@ import type {
 
 class FakeRecognition implements BrowserSpeechRecognition {
   static latest: FakeRecognition | null = null;
+  static instances: FakeRecognition[] = [];
 
   continuous = false;
   interimResults = true;
@@ -24,6 +25,7 @@ class FakeRecognition implements BrowserSpeechRecognition {
 
   constructor() {
     FakeRecognition.latest = this;
+    FakeRecognition.instances.push(this);
   }
 
   emitResult(transcript: string) {
@@ -49,6 +51,7 @@ class FakeRecognition implements BrowserSpeechRecognition {
 afterEach(() => {
   vi.unstubAllGlobals();
   FakeRecognition.latest = null;
+  FakeRecognition.instances = [];
 });
 
 describe("useVoiceInput", () => {
@@ -112,5 +115,40 @@ describe("useVoiceInput", () => {
 
     expect(result.current.status).toBe("error");
     expect(result.current.error).toBe("No speech was detected. Try again.");
+  });
+
+  it("keeps recognition running while voice mode is active", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", { webkitSpeechRecognition: FakeRecognition });
+    const onText = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ active }) => useVoiceInput({ active, lang: "zh-CN", onText }),
+      { initialProps: { active: true } },
+    );
+
+    expect(result.current.status).toBe("listening");
+    expect(FakeRecognition.instances).toHaveLength(1);
+    expect(FakeRecognition.latest?.continuous).toBe(true);
+    expect(FakeRecognition.latest?.lang).toBe("zh-CN");
+
+    act(() => {
+      FakeRecognition.latest?.emitResult("打开浏览器");
+      FakeRecognition.latest?.emitEnd();
+    });
+
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+
+    expect(onText).toHaveBeenCalledWith("打开浏览器");
+    expect(FakeRecognition.instances).toHaveLength(2);
+    expect(result.current.status).toBe("listening");
+
+    act(() => {
+      rerender({ active: false });
+    });
+
+    expect(FakeRecognition.latest?.stop).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

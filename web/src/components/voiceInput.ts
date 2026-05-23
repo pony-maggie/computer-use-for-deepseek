@@ -57,6 +57,19 @@ export function getDefaultVoiceLanguage(preferredLanguage?: string): string {
   return "en-US";
 }
 
+export function speakVoiceFeedback(text: string, lang: string): boolean {
+  const spokenText = text.trim();
+  if (!spokenText || typeof window === "undefined") return false;
+  if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+    return false;
+  }
+  const utterance = new window.SpeechSynthesisUtterance(spokenText);
+  utterance.lang = lang;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+  return true;
+}
+
 const voiceCommandPhrases: Record<string, VoiceCommand> = {
   "创建任务": "create_run",
   "创建 run": "create_run",

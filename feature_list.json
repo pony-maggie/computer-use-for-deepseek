@@ -161,6 +161,14 @@
       "status": "done",
       "dependencies": ["feat-019"],
       "evidence": "Backend /api/voice/interpret endpoint added with model parsing and local fallback. Frontend voice flow now calls the parser before executing UI actions. Server pytest passed with 61 tests. Web vitest passed with 36 tests. Web build passed. ./init.sh passed."
+    },
+    {
+      "id": "feat-021",
+      "name": "Persistent voice mode and spoken feedback",
+      "description": "Keep voice input active as a user-controlled mode, let users choose and persist the recognition language, speak back parsed intent and clarifying questions, and keep approval/rejection manual-only.",
+      "status": "done",
+      "dependencies": ["feat-020"],
+      "evidence": "Voice mode now restarts browser recognition while enabled, persists language settings, uses browser speech synthesis for intent feedback, and supports parser clarifying questions. Targeted server/web tests passed, full server pytest passed, full web vitest passed, web build passed, and ./init.sh passed."
     }
   ]
 }
