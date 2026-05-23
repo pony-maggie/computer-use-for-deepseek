@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createRun, getApiHealth, interpretVoice } from "./api";
+import { createRun, getApiHealth, interpretVoice, listRuns } from "./api";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -46,5 +46,30 @@ describe("api client", () => {
         method: "POST",
       }),
     );
+  });
+
+  it("fetches run history", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          run_id: "run_123",
+          task: "open example.com",
+          status: "completed",
+          final_text: "Done",
+          created_at: "2026-05-23T10:00:00+00:00",
+          updated_at: "2026-05-23T10:01:00+00:00",
+        },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const history = await listRuns();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/runs",
+      { cache: "no-store" },
+    );
+    expect(history[0].task).toBe("open example.com");
   });
 });

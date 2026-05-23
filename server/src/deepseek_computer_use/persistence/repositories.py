@@ -12,6 +12,7 @@ class RunSummary:
     id: str
     task: str
     status: str
+    final_text: str | None
 
 
 class RunRepository:
@@ -35,7 +36,10 @@ class RunRepository:
 
     def list_runs(self) -> list[RunSummary]:
         rows = self.session.query(RunRecord).order_by(RunRecord.created_at.desc()).all()
-        return [RunSummary(id=row.id, task=row.task, status=row.status) for row in rows]
+        return [
+            RunSummary(id=row.id, task=row.task, status=row.status, final_text=row.final_text)
+            for row in rows
+        ]
 
     def append_event(self, run_id: str, kind: str, payload: dict[str, object]) -> None:
         self.session.add(

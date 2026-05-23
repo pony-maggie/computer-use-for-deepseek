@@ -7,11 +7,19 @@ from uuid import uuid4
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import inspect, text
 
 from deepseek_computer_use.agent.core import AgentCore
 from deepseek_computer_use.config import settings
 from deepseek_computer_use.models.deepseek import DeepSeekAdapter
 from deepseek_computer_use.models.protocol import AgentStatus, ToolCall
+from deepseek_computer_use.persistence.database import (
+    create_app_engine,
+    create_session_factory,
+    create_tables,
+    session_scope,
+)
+from deepseek_computer_use.persistence.schema import RunRecord
 from deepseek_computer_use.runtime.docker_runtime import DockerRuntime
 from deepseek_computer_use.runtime.mock_runtime import MockRuntime
 from deepseek_computer_use.runtime.run_scoped_runtime import RunScopedRuntime
@@ -23,6 +31,22 @@ from deepseek_computer_use.workspace.manager import WorkspaceManager
 router = APIRouter()
 workspace_manager = WorkspaceManager(settings.app_workspace_root)
 runs: dict[str, "RunState"] = {}
+_engine = create_app_engine(settings.app_database_url)
+_session_factory = create_session_factory(_engine)
+
+
+def _initialize_history_store() -> None:
+    if settings.app_database_url.startswith("sqlite:///"):
+        db_path = Path(settings.app_database_url.removeprefix("sqlite:///"))
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    create_tables(_engine)
+    columns = {column["name"] for column in inspect(_engine).get_columns("runs")}
+    if "final_text" not in columns:
+        with _engine.begin() as connection:
+            connection.execute(text("ALTER TABLE runs ADD COLUMN final_text TEXT"))
+
+
+_initialize_history_store()
 
 
 def _utc_now() -> str:
@@ -65,6 +89,15 @@ class RunState(BaseModel):
     events: list[dict[str, str]] = Field(default_factory=list)
 
 
+class RunHistoryItem(BaseModel):
+    run_id: str
+    task: str
+    status: str
+    final_text: str | None = None
+    created_at: str
+    updated_at: str
+
+
 @router.post("/runs", response_model=RunState)
 def create_run(request: CreateRunRequest) -> RunState:
     run_id = f"run_{uuid4().hex}"
@@ -76,7 +109,27 @@ def create_run(request: CreateRunRequest) -> RunState:
         model=_select_model(request.task),
         events=[{"kind": "created", "message": "Run created"}],
     )
+    _persist_run(runs[run_id])
     return runs[run_id]
+
+
+@router.get("/runs", response_model=list[RunHistoryItem])
+def list_runs() -> list[RunHistoryItem]:
+    history: dict[str, RunHistoryItem] = {}
+    with session_scope(_session_factory) as session:
+        records = session.query(RunRecord).order_by(RunRecord.updated_at.desc()).all()
+        for record in records:
+            history[record.id] = RunHistoryItem(
+                run_id=record.id,
+                task=record.task,
+                status=record.status,
+                final_text=record.final_text,
+                created_at=_format_datetime(record.created_at),
+                updated_at=_format_datetime(record.updated_at),
+            )
+    for run in runs.values():
+        history[run.run_id] = _history_item_from_run(run)
+    return sorted(history.values(), key=lambda item: item.updated_at, reverse=True)
 
 
 @router.post("/voice/interpret", response_model=VoiceInterpretation)
@@ -223,6 +276,8 @@ def download_file(run_id: str, relative_path: str) -> FileResponse:
 def _get_run(run_id: str) -> RunState:
     run = runs.get(run_id)
     if run is None:
+        run = _load_persisted_run(run_id)
+    if run is None:
         raise HTTPException(status_code=404, detail="run not found")
     return run
 
@@ -238,6 +293,56 @@ def _build_voice_intent_parser() -> VoiceIntentParser:
 def _append_event(run: RunState, kind: str, message: str) -> None:
     run.updated_at = _utc_now()
     run.events.append({"kind": kind, "message": message})
+    _persist_run(run)
+
+
+def _persist_run(run: RunState) -> None:
+    with session_scope(_session_factory) as session:
+        record = session.get(RunRecord, run.run_id)
+        if record is None:
+            record = RunRecord(id=run.run_id, task=run.task, status=run.status)
+            session.add(record)
+        record.task = run.task
+        record.status = run.status
+        record.final_text = run.final_text
+        record.created_at = _parse_datetime(run.created_at)
+        record.updated_at = _parse_datetime(run.updated_at)
+
+
+def _history_item_from_run(run: RunState) -> RunHistoryItem:
+    return RunHistoryItem(
+        run_id=run.run_id,
+        task=run.task,
+        status=run.status,
+        final_text=run.final_text,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+    )
+
+
+def _load_persisted_run(run_id: str) -> RunState | None:
+    with session_scope(_session_factory) as session:
+        record = session.get(RunRecord, run_id)
+        if record is None:
+            return None
+        return RunState(
+            run_id=record.id,
+            task=record.task,
+            status=record.status,
+            final_text=record.final_text,
+            created_at=_format_datetime(record.created_at),
+            updated_at=_format_datetime(record.updated_at),
+        )
+
+
+def _parse_datetime(value: str) -> datetime:
+    return datetime.fromisoformat(value)
+
+
+def _format_datetime(value: datetime) -> str:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc).isoformat()
+    return value.isoformat()
 
 
 async def _run_agent_task(run: RunState) -> None:

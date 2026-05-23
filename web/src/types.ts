@@ -1,5 +1,6 @@
 export type Run = {
   run_id: string;
+  task: string;
   status: string;
   final_text?: string | null;
   steps: number;
@@ -17,6 +18,15 @@ export type Run = {
   updated_at?: string;
   pending_confirmation?: unknown | null;
   pending_confirmation_summary?: string | null;
+};
+
+export type RunHistoryItem = {
+  run_id: string;
+  task: string;
+  status: string;
+  final_text?: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type WorkspaceFile = {

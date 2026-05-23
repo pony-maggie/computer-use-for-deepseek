@@ -296,3 +296,21 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `cd web && npm run build`
   - `python3 -m json.tool feature_list.json`
   - `./init.sh`
+
+## 2026-05-23 Current Task Visibility and Run History
+
+- Identified a general UX gap: `ChatPanel` clears the task input after creating a run, leaving no stable place to see what the current run is doing.
+- Added current task visibility to the run controls panel so the task text remains visible while the run executes.
+- Added run history:
+  - backend `GET /api/runs` returns run ID, task, status, created/updated time, and final result;
+  - run summaries are persisted to the existing SQLite database path under `data/app.db`;
+  - frontend sidebar renders a selectable history list and can switch back to a previous run.
+- Updated English and Chinese README files with the current task/history behavior.
+- Verification completed:
+  - `cd server && . .venv/bin/activate && pytest tests/test_api_routes.py::test_list_runs_returns_history_with_task_time_and_result -v`
+  - `cd web && npm test -- RunControls.test.tsx RunHistoryPanel.test.tsx api.test.ts`
+  - `cd server && . .venv/bin/activate && pytest -v`
+  - `cd web && npm test`
+  - `cd web && npm run build`
+  - `python3 -m json.tool feature_list.json`
+  - `./init.sh`

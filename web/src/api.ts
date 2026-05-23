@@ -1,4 +1,4 @@
-import type { Run, RunEvent, WorkspaceFile } from "./types";
+import type { Run, RunEvent, RunHistoryItem, WorkspaceFile } from "./types";
 
 const API_ORIGIN = "http://localhost:8000";
 const API_BASE = `${API_ORIGIN}/api`;
@@ -68,6 +68,12 @@ export async function interpretVoice(request: VoiceInterpretRequest): Promise<Vo
 
 export async function getRun(runId: string): Promise<Run> {
   const response = await fetchApi(`${API_BASE}/runs/${runId}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
+export async function listRuns(): Promise<RunHistoryItem[]> {
+  const response = await fetchApi(`${API_BASE}/runs`, { cache: "no-store" });
   if (!response.ok) throw new Error(await response.text());
   return response.json();
 }

@@ -14,6 +14,7 @@ class RunRecord(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     task: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String, index=True)
+    final_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 

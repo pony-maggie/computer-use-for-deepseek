@@ -186,6 +186,21 @@ input[type="file"]:disabled::file-selector-button {
   gap: 10px;
 }
 
+.current-task {
+  grid-column: 1 / -1;
+  border-top: 1px solid #e4e7ec;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.current-task p {
+  margin: 4px 0 0;
+  color: #1d2430;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .confirmation-panel {
   grid-column: 1 / -1;
   display: grid;
@@ -279,4 +294,61 @@ input[type="file"]:disabled::file-selector-button {
   color: #475467;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.history-panel {
+  min-height: 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.history-item {
+  width: 100%;
+  height: auto;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  text-align: left;
+  background: #ffffff;
+}
+
+.history-item.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.history-row strong,
+.history-task,
+.history-result {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-task {
+  color: #1d2430;
+  font-weight: 650;
+}
+
+.history-time,
+.history-result {
+  color: #667085;
+  font-size: 12px;
 }

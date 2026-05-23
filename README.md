@@ -99,6 +99,10 @@ Use the web app to upload files into a task workspace. The AI can read and edit 
 
 For safety, the app does not mount your entire home directory by default.
 
+## Run History
+
+After you create a task, the current run panel keeps showing the task text while the run executes. The sidebar also keeps a run history with the run ID, task, status, time, and final result when available. History is stored under the local `data/` directory used by `./start.sh`, so it remains available after restarting the app.
+
 ## Voice Input
 
 The Web UI supports a persistent browser voice mode for the task box and a small set of task-control commands. Turn on `Voice`, allow microphone access, choose the recognition language, and speak naturally. The app keeps listening while voice mode is on, uses the transcript to separate task text from UI actions, and speaks back what it understood or what it needs clarified. You can say things like `打开浏览器，访问 baidu.com，开始运行` or `create run`, `start run`, `pause`, `resume`, `cancel`, and `clear input`.

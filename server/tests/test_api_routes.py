@@ -74,6 +74,46 @@ def test_get_run_endpoint_returns_current_run_state() -> None:
     assert response.json()["status"] == "created"
 
 
+def test_list_runs_returns_history_with_task_time_and_result() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "Summarize uploaded report"}).json()
+    run_id = created["run_id"]
+
+    runs[run_id].status = "completed"
+    runs[run_id].final_text = "Report summarized"
+    runs[run_id].updated_at = "2026-05-23T10:00:00+00:00"
+
+    response = client.get("/api/runs")
+
+    assert response.status_code == 200
+    matching = [item for item in response.json() if item["run_id"] == run_id]
+    assert matching == [
+        {
+            "run_id": run_id,
+            "task": "Summarize uploaded report",
+            "status": "completed",
+            "final_text": "Report summarized",
+            "created_at": created["created_at"],
+            "updated_at": "2026-05-23T10:00:00+00:00",
+        }
+    ]
+
+
+def test_get_run_can_restore_persisted_history_summary() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "Open the saved report"}).json()
+    run_id = created["run_id"]
+    runs.pop(run_id)
+
+    response = client.get(f"/api/runs/{run_id}")
+
+    assert response.status_code == 200
+    assert response.json()["run_id"] == run_id
+    assert response.json()["task"] == "Open the saved report"
+    assert response.json()["status"] == "created"
+    assert response.json()["events"] == []
+
+
 def test_local_frontend_origins_are_allowed_for_cors() -> None:
     client = TestClient(create_app())
 

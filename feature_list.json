@@ -169,6 +169,14 @@
       "status": "done",
       "dependencies": ["feat-020"],
       "evidence": "Voice mode now restarts browser recognition while enabled, persists language settings, uses browser speech synthesis for intent feedback, and supports parser clarifying questions. Targeted server/web tests passed, full server pytest passed, full web vitest passed, web build passed, and ./init.sh passed."
+    },
+    {
+      "id": "feat-022",
+      "name": "Current task visibility and run history",
+      "description": "Keep the active task visible after run creation and store run history with ID, task, status, time, and final result for later review.",
+      "status": "done",
+      "dependencies": ["feat-012"],
+      "evidence": "RunControls displays current task text. Backend exposes GET /api/runs and persists run summaries to SQLite. Web sidebar renders selectable run history. Targeted backend/frontend tests passed."
     }
   ]
 }

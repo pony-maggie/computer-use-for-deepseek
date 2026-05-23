@@ -63,6 +63,12 @@ export function RunControls({
           {run.cost_budget_usd > 0 ? `/${run.cost_budget_usd.toFixed(4)}` : ""}
         </span>
       ) : null}
+      {run?.task ? (
+        <div className="current-task">
+          <span className="eyebrow">Current Task</span>
+          <p>{run.task}</p>
+        </div>
+      ) : null}
       <button disabled={!controls.canStart} onClick={() => void onStart()}>
         {pendingAction === "start" ? "Starting..." : "Start Run"}
       </button>

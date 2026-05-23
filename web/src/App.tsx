@@ -6,6 +6,7 @@ import {
   getApiHealth,
   getRun,
   listEvents,
+  listRuns,
   pauseRun,
   rejectRun,
   resumeRun,
@@ -14,10 +15,11 @@ import {
 import { ChatPanel } from "./components/ChatPanel";
 import { ComputerPanel } from "./components/ComputerPanel";
 import { RunControls } from "./components/RunControls";
+import { RunHistoryPanel } from "./components/RunHistoryPanel";
 import { Timeline } from "./components/Timeline";
 import { WorkspacePanel } from "./components/WorkspacePanel";
 import { getRunControlState, type RunAction } from "./components/runControlState";
-import type { Run, RunEvent } from "./types";
+import type { Run, RunEvent, RunHistoryItem } from "./types";
 import "./styles.css";
 
 const pollingStatuses = new Set(["created", "running", "waiting_for_confirmation", "paused"]);
@@ -28,6 +30,7 @@ export default function App() {
   const [finalText, setFinalText] = useState<string | null>(null);
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<RunEvent[]>([]);
+  const [history, setHistory] = useState<RunHistoryItem[]>([]);
   const [pendingRunAction, setPendingRunAction] = useState<RunAction | null>(null);
   const [apiReady, setApiReady] = useState(false);
 
@@ -48,18 +51,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!apiReady) return;
+
+    let active = true;
+
+    async function refreshHistory() {
+      try {
+        const updatedHistory = await listRuns();
+        if (active) setHistory(updatedHistory);
+      } catch {
+        // Keep the visible history stable while the API is temporarily unavailable.
+      }
+    }
+
+    void refreshHistory();
+    return () => {
+      active = false;
+    };
+  }, [apiReady]);
+
+  useEffect(() => {
     if (!runId || !pollingStatuses.has(status)) return;
 
     let active = true;
 
     async function refreshRunState() {
       try {
-        const [updatedRun, updatedEvents] = await Promise.all([getRun(runId!), listEvents(runId!)]);
+        const [updatedRun, updatedEvents, updatedHistory] = await Promise.all([
+          getRun(runId!),
+          listEvents(runId!),
+          listRuns(),
+        ]);
         if (!active) return;
         setRun(updatedRun);
         setStatus(updatedRun.status);
         setFinalText(updatedRun.final_text ?? null);
         setEvents(updatedEvents);
+        setHistory(updatedHistory);
       } catch {
         // Keep the last known state; the health check already reports API reachability.
       }
@@ -79,7 +107,12 @@ export default function App() {
     setRunId(createdRun.run_id);
     setStatus(createdRun.status);
     setFinalText(createdRun.final_text ?? null);
-    setEvents(await listEvents(createdRun.run_id));
+    const [createdEvents, updatedHistory] = await Promise.all([
+      listEvents(createdRun.run_id),
+      listRuns(),
+    ]);
+    setEvents(createdEvents);
+    setHistory(updatedHistory);
   }
 
   async function updateRun(actionName: RunAction, action: (runId: string) => Promise<Run>) {
@@ -90,7 +123,9 @@ export default function App() {
       setRun(updatedRun);
       setStatus(updatedRun.status);
       setFinalText(updatedRun.final_text ?? null);
-      setEvents(await listEvents(runId));
+      const [updatedEvents, updatedHistory] = await Promise.all([listEvents(runId), listRuns()]);
+      setEvents(updatedEvents);
+      setHistory(updatedHistory);
     } finally {
       setPendingRunAction(null);
     }
@@ -120,6 +155,18 @@ export default function App() {
     return null;
   }
 
+  async function selectRun(selectedRunId: string) {
+    const [selectedRun, selectedEvents] = await Promise.all([
+      getRun(selectedRunId),
+      listEvents(selectedRunId),
+    ]);
+    setRun(selectedRun);
+    setRunId(selectedRun.run_id);
+    setStatus(selectedRun.status);
+    setFinalText(selectedRun.final_text ?? null);
+    setEvents(selectedEvents);
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -132,6 +179,7 @@ export default function App() {
           hasPendingConfirmation={status === "waiting_for_confirmation"}
         />
         <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
+        <RunHistoryPanel history={history} activeRunId={runId} onSelectRun={(id) => void selectRun(id)} />
       </aside>
       <section className="workspace">
         <RunControls
