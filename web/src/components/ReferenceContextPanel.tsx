@@ -1,4 +1,5 @@
 import { ChangeEvent, useState } from "react";
+import { useI18n } from "../i18n";
 import {
   buildReferenceContextBlock,
   buildReferenceContextItem,
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function ReferenceContextPanel({ onContextChange }: Props) {
+  const { t } = useI18n();
   const [items, setItems] = useState<ReferenceContextItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export function ReferenceContextPanel({ onContextChange }: Props) {
       setItems(nextItems);
       onContextChange(buildReferenceContextBlock(nextItems), nextItems);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to read reference files");
+      setError(err instanceof Error ? err.message : t("references.failed"));
     }
   }
 
@@ -34,11 +36,13 @@ export function ReferenceContextPanel({ onContextChange }: Props) {
 
   return (
     <section className="panel reference-panel">
-      <div className="panel-header">References</div>
+      <div className="panel-header">{t("references.header")}</div>
       <input type="file" multiple onChange={onFilesSelected} />
       {items.length ? (
         <>
-          <div className="status-text">{items.length} reference item(s) will be appended to new runs.</div>
+          <div className="status-text">
+            {items.length} {t("references.appended")}
+          </div>
           <ul className="reference-list">
             {items.map((item) => (
               <li key={item.id}>
@@ -48,11 +52,11 @@ export function ReferenceContextPanel({ onContextChange }: Props) {
             ))}
           </ul>
           <button type="button" onClick={clearReferences}>
-            Clear References
+            {t("references.clear")}
           </button>
         </>
       ) : (
-        <div className="status-text">Attach local articles, screenshots, notes, or data as task context.</div>
+        <div className="status-text">{t("references.empty")}</div>
       )}
       {error ? <div className="error-text">{error}</div> : null}
     </section>

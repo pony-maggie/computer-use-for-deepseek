@@ -1,4 +1,5 @@
 import type { Run, RunEvent } from "../types";
+import { useI18n } from "../i18n";
 import { buildRunReport, eventDomId, summarizeRunEvent } from "./runEventView";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Props) {
+  const { t } = useI18n();
   const selected =
     events.find((event, index) => eventDomId(event, index) === selectedEventId) ??
     events[events.length - 1] ??
@@ -18,10 +20,10 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
   return (
     <section className="panel run-inspector">
       <div className="inspector-column">
-        <div className="panel-header">Audit Trail</div>
+        <div className="panel-header">{t("inspector.audit")}</div>
         <div className="step-timeline">
           {events.length === 0 ? (
-            <div className="status-text">Run audit events will appear here.</div>
+            <div className="status-text">{t("inspector.empty")}</div>
           ) : null}
           {events.map((event, index) => {
             const id = eventDomId(event, index);
@@ -38,7 +40,11 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
                   <span className={`step-status ${event.status ?? "completed"}`}>
                     {event.status ?? "completed"}
                   </span>
-                  {event.step ? <span>Step {event.step}</span> : null}
+                  {event.step ? (
+                    <span>
+                      {t("inspector.step")} {event.step}
+                    </span>
+                  ) : null}
                 </span>
                 <strong>{summarizeRunEvent(event)}</strong>
                 <span className="step-message">{event.message}</span>
@@ -54,29 +60,29 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
         </div>
       </div>
       <div className="inspector-column">
-        <div className="panel-header">Step Details</div>
+        <div className="panel-header">{t("inspector.stepDetails")}</div>
         <div className="step-details">
           {selected ? (
             <pre>{JSON.stringify(selected, null, 2)}</pre>
           ) : (
-            <div className="status-text">Select a step to inspect it.</div>
+            <div className="status-text">{t("inspector.selectStep")}</div>
           )}
         </div>
       </div>
       <div className="run-report">
-        <div className="panel-header">Run Report</div>
+        <div className="panel-header">{t("inspector.report")}</div>
         <dl>
-          <dt>Steps</dt>
+          <dt>{t("inspector.steps")}</dt>
           <dd>{report.steps}</dd>
-          <dt>Tokens</dt>
+          <dt>{t("inspector.tokens")}</dt>
           <dd>{report.totalTokens}</dd>
-          <dt>Cost</dt>
+          <dt>{t("inspector.cost")}</dt>
           <dd>${report.estimatedCostUsd.toFixed(4)}</dd>
-          <dt>Screenshots</dt>
+          <dt>{t("inspector.screenshots")}</dt>
           <dd>{report.screenshotCount}</dd>
-          <dt>Cache hits</dt>
+          <dt>{t("inspector.cacheHits")}</dt>
           <dd>{report.promptCacheHitTokens}</dd>
-          <dt>Errors</dt>
+          <dt>{t("inspector.errors")}</dt>
           <dd>{report.errorCount}</dd>
         </dl>
         {report.finalText ? <p>{report.finalText}</p> : null}

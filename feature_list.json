@@ -201,6 +201,14 @@
       "status": "done",
       "dependencies": ["feat-023", "feat-024"],
       "evidence": "AdvancedControlSuite, AgentOperationsPanel, execution profile injection, benchmark lab upgrade, design spec, and implementation plan added. Web build passed. Web vitest passed with 52 tests. Browser E2E confirmed scenario packs, mode switching, viewport lab, approval rules, workflow notes, Execution Profile injection, replay cleanup, failure-state error display, error event selection, and error count reporting."
+    },
+    {
+      "id": "feat-026",
+      "name": "Bilingual interface and voice language alignment",
+      "description": "Add a global Chinese/English UI language switch and make voice recognition follow the selected interface language instead of showing a separate voice language selector.",
+      "status": "done",
+      "dependencies": ["feat-021", "feat-025"],
+      "evidence": "Frontend i18n provider, language switcher, localized panels, localized templates/scenarios, and voice-language alignment implemented. Targeted i18n/voice/UI tests passed with 18 tests. Full web vitest passed with 53 tests. Web production build passed. Browser E2E on 2026-05-24 confirmed Chinese and English UI switching, document lang updates to en-US, and no remaining Voice language/语音语言 selector text."
     }
   ]
 }

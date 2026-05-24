@@ -1,4 +1,5 @@
 import type { RunHistoryItem } from "../types";
+import { useI18n } from "../i18n";
 
 type Props = {
   history: RunHistoryItem[];
@@ -7,17 +8,19 @@ type Props = {
 };
 
 export function RunHistoryPanel({ history, activeRunId, onSelectRun }: Props) {
+  const { t } = useI18n();
   const visibleHistory = history.slice(0, 12);
 
   return (
     <section className="panel history-panel">
-      <div className="panel-header">History</div>
+      <div className="panel-header">{t("history.header")}</div>
       {history.length === 0 ? (
-        <div className="status-text">No previous runs yet.</div>
+        <div className="status-text">{t("history.empty")}</div>
       ) : (
         <>
           <div className="status-text">
-            Showing latest {visibleHistory.length} of {history.length} runs.
+            {t("history.showingPrefix")} {visibleHistory.length} {t("history.showingMiddle")}{" "}
+            {history.length} {t("history.showingSuffix")}
           </div>
           <ol className="history-list">
             {visibleHistory.map((item) => (

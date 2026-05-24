@@ -1,6 +1,7 @@
 import type { Run, RunEvent } from "../types";
+import { useI18n } from "../i18n";
 import type { ControlProfile } from "./advancedControls";
-import { getViewportPreset, recoveryStrategies } from "./advancedControls";
+import { getViewportPreset } from "./advancedControls";
 import { summarizeRunEvent } from "./runEventView";
 
 type Props = {
@@ -11,45 +12,53 @@ type Props = {
 };
 
 export function AgentOperationsPanel({ run, events, activeEvent, profile }: Props) {
+  const { t } = useI18n();
   const viewport = getViewportPreset(profile.viewportId);
   const recentEvents = events.slice(-4);
   const currentUrl = extractUrl(activeEvent);
-  const pendingApprovals = approvalRules(profile);
+  const pendingApprovals = approvalRules(profile, t);
+  const recoveryStrategies = [
+    t("operations.recoverySettle"),
+    t("operations.recoveryDom"),
+    t("operations.recoveryRetry"),
+    t("operations.recoveryStop"),
+    t("operations.recoveryTakeover"),
+  ];
 
   return (
     <section className="panel operations-panel">
-      <div className="panel-header">Agent Operations</div>
+      <div className="panel-header">{t("operations.header")}</div>
 
       <div className="operations-section">
-        <span className="eyebrow">Live Context Loop</span>
+        <span className="eyebrow">{t("operations.loop")}</span>
         <ol className="context-loop">
-          <li className="active">Screenshot + previous context</li>
-          <li className={run?.status === "running" ? "active" : ""}>Model response</li>
-          <li className={activeEvent?.tool_name ? "active" : ""}>Execute action</li>
-          <li className={events.length ? "active" : ""}>Capture new state</li>
+          <li className="active">{t("operations.loopContext")}</li>
+          <li className={run?.status === "running" ? "active" : ""}>{t("operations.loopModel")}</li>
+          <li className={activeEvent?.tool_name ? "active" : ""}>{t("operations.loopAction")}</li>
+          <li className={events.length ? "active" : ""}>{t("operations.loopState")}</li>
         </ol>
       </div>
 
       <div className="operations-section">
-        <span className="eyebrow">URL + DOM Inspector</span>
+        <span className="eyebrow">{t("operations.dom")}</span>
         <dl className="compact-dl">
-          <dt>Mode</dt>
+          <dt>{t("operations.mode")}</dt>
           <dd>{profile.mode}</dd>
-          <dt>Viewport</dt>
+          <dt>{t("operations.viewport")}</dt>
           <dd>{viewport.width}x{viewport.height}</dd>
-          <dt>URL</dt>
-          <dd>{currentUrl ?? "Not reported by runtime yet"}</dd>
-          <dt>DOM path</dt>
-          <dd>{profile.mode === "computer" ? "visual-first fallback" : "DOM-first when available"}</dd>
+          <dt>{t("operations.url")}</dt>
+          <dd>{currentUrl ?? t("operations.urlMissing")}</dd>
+          <dt>{t("operations.domPath")}</dt>
+          <dd>{profile.mode === "computer" ? t("operations.visualFirst") : t("operations.domFirst")}</dd>
         </dl>
       </div>
 
       <div className="operations-section">
-        <span className="eyebrow">Approval Queue</span>
+        <span className="eyebrow">{t("operations.approvalQueue")}</span>
         {run?.pending_confirmation_summary ? (
           <div className="approval-queue-item">{run.pending_confirmation_summary}</div>
         ) : (
-          <div className="status-text">No pending approval requests.</div>
+          <div className="status-text">{t("operations.noApprovals")}</div>
         )}
         <ul className="mini-list">
           {pendingApprovals.map((rule) => (
@@ -59,7 +68,7 @@ export function AgentOperationsPanel({ run, events, activeEvent, profile }: Prop
       </div>
 
       <div className="operations-section">
-        <span className="eyebrow">Self-Healing Strategy</span>
+        <span className="eyebrow">{t("operations.recovery")}</span>
         <ul className="mini-list">
           {recoveryStrategies.map((strategy) => (
             <li key={strategy}>{strategy}</li>
@@ -68,7 +77,7 @@ export function AgentOperationsPanel({ run, events, activeEvent, profile }: Prop
       </div>
 
       <div className="operations-section">
-        <span className="eyebrow">Recent Context</span>
+        <span className="eyebrow">{t("operations.recent")}</span>
         {recentEvents.length ? (
           <ul className="mini-list">
             {recentEvents.map((event, index) => (
@@ -76,21 +85,21 @@ export function AgentOperationsPanel({ run, events, activeEvent, profile }: Prop
             ))}
           </ul>
         ) : (
-          <div className="status-text">Run events will appear here.</div>
+          <div className="status-text">{t("operations.emptyRecent")}</div>
         )}
       </div>
     </section>
   );
 }
 
-function approvalRules(profile: ControlProfile): string[] {
+function approvalRules(profile: ControlProfile, t: ReturnType<typeof useI18n>["t"]): string[] {
   return [
-    profile.actionPolicy.requireApprovalForSubmits ? "Submit/publish actions require approval." : null,
+    profile.actionPolicy.requireApprovalForSubmits ? t("operations.submitApproval") : null,
     profile.actionPolicy.requireApprovalForExternalNavigation
-      ? "External navigation requires approval."
+      ? t("operations.externalApproval")
       : null,
     profile.actionPolicy.requireApprovalForDestructiveActions
-      ? "Destructive actions require approval."
+      ? t("operations.destructiveApproval")
       : null,
   ].filter(Boolean) as string[];
 }

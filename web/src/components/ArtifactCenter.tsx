@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fileDownloadUrl, listFiles } from "../api";
+import { useI18n } from "../i18n";
 import type { Run, RunEvent, WorkspaceFile } from "../types";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export function ArtifactCenter({ run, events }: Props) {
+  const { t } = useI18n();
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +25,7 @@ export function ArtifactCenter({ run, events }: Props) {
         const nextFiles = await listFiles(run.run_id);
         if (active) setFiles(nextFiles);
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : "Failed to load artifacts");
+        if (active) setError(err instanceof Error ? err.message : t("artifacts.failed"));
       }
     }
     void refreshFiles();
@@ -36,7 +38,7 @@ export function ArtifactCenter({ run, events }: Props) {
 
   return (
     <section className="panel artifact-center">
-      <div className="panel-header">Artifacts</div>
+      <div className="panel-header">{t("artifacts.header")}</div>
       {run?.final_text ? <p className="artifact-final">{run.final_text}</p> : null}
       {error ? <div className="error-text">{error}</div> : null}
       {files.length ? (
@@ -51,7 +53,7 @@ export function ArtifactCenter({ run, events }: Props) {
           ))}
         </ul>
       ) : (
-        <div className="status-text">Output files and final results will appear here.</div>
+        <div className="status-text">{t("artifacts.empty")}</div>
       )}
       {screenshots.length ? (
         <div className="artifact-screenshots">

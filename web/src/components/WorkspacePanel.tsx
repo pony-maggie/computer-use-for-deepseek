@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { fileDownloadUrl, listFiles, uploadFile } from "../api";
+import { useI18n } from "../i18n";
 import type { WorkspaceFile } from "../types";
 import { getWorkspaceUploadState } from "./workspaceUploadState";
 
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function WorkspacePanel({ runId, runStatus, runUpdatedAt }: Props) {
+  const { t } = useI18n();
   const [files, setFiles] = useState<WorkspaceFile[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
@@ -24,7 +26,7 @@ export function WorkspacePanel({ runId, runStatus, runUpdatedAt }: Props) {
     try {
       setFiles(await listFiles(runId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load files");
+      setError(err instanceof Error ? err.message : t("workspace.failedLoad"));
     }
   }
 
@@ -46,7 +48,7 @@ export function WorkspacePanel({ runId, runStatus, runUpdatedAt }: Props) {
       }
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload file");
+      setError(err instanceof Error ? err.message : t("workspace.failedUpload"));
     } finally {
       setUploading(false);
     }
@@ -72,7 +74,7 @@ export function WorkspacePanel({ runId, runStatus, runUpdatedAt }: Props) {
         setStagedFiles([]);
         await refresh();
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : "Failed to upload file");
+        if (active) setError(err instanceof Error ? err.message : t("workspace.failedUpload"));
       } finally {
         if (active) setUploading(false);
       }
@@ -88,11 +90,14 @@ export function WorkspacePanel({ runId, runStatus, runUpdatedAt }: Props) {
     runId,
     stagedFileCount: stagedFiles.length,
     uploading,
+    uploadingMessage: t("workspace.uploading"),
+    readySingularMessage: t("workspace.fileReady"),
+    readyPluralMessage: t("workspace.filesReady"),
   });
 
   return (
     <section className="panel">
-      <div className="panel-header">Workspace</div>
+      <div className="panel-header">{t("workspace.header")}</div>
       <input type="file" disabled={uploadState.inputDisabled} multiple onChange={onUpload} />
       {uploadState.message ? <div className="status-text">{uploadState.message}</div> : null}
       {error ? <div className="error-text">{error}</div> : null}

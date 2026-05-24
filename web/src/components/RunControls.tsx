@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Run } from "../types";
+import { useI18n } from "../i18n";
 import { ApprovalPreview } from "./ApprovalPreview";
 import { getRunControlState, type RunAction } from "./runControlState";
 
@@ -17,15 +18,6 @@ type Props = {
   onReject: () => Promise<void>;
 };
 
-const pendingLabels: Record<RunAction, string> = {
-  start: "Starting run...",
-  pause: "Pausing run...",
-  resume: "Resuming run...",
-  cancel: "Canceling run...",
-  approve: "Approving action...",
-  reject: "Rejecting action...",
-};
-
 export function RunControls({
   runId,
   status,
@@ -39,9 +31,18 @@ export function RunControls({
   onApprove,
   onReject,
 }: Props) {
+  const { t } = useI18n();
   const [now, setNow] = useState(Date.now());
   const controls = getRunControlState(status, Boolean(runId), pendingAction);
-  const activityText = getActivityText(run, status, pendingAction, now);
+  const activityText = getActivityText(run, status, pendingAction, now, t);
+  const pendingLabels: Record<RunAction, string> = {
+    start: t("run.pendingStart"),
+    pause: t("run.pendingPause"),
+    resume: t("run.pendingResume"),
+    cancel: t("run.pendingCancel"),
+    approve: t("run.pendingApprove"),
+    reject: t("run.pendingReject"),
+  };
 
   useEffect(() => {
     if (status !== "running") return;
@@ -52,8 +53,8 @@ export function RunControls({
   return (
     <section className="panel run-controls">
       <div className="run-summary">
-        <span className="eyebrow">Current Run</span>
-        <span>{runId ?? "No run created"}</span>
+        <span className="eyebrow">{t("run.current")}</span>
+        <span>{runId ?? t("run.none")}</span>
         <strong>{status}</strong>
         {pendingAction ? <span className="pending-text">{pendingLabels[pendingAction]}</span> : null}
         {activityText ? <span className="activity-text">{activityText}</span> : null}
@@ -67,23 +68,23 @@ export function RunControls({
         </span>
       ) : null}
       {run?.task ? (
-        <div className="current-task">
-          <span className="eyebrow">Current Task</span>
-          <p>{run.task}</p>
-        </div>
+            <div className="current-task">
+              <span className="eyebrow">{t("run.currentTask")}</span>
+              <p>{run.task}</p>
+            </div>
       ) : null}
       {error ? <div className="error-text run-action-error">{error}</div> : null}
       <button disabled={!controls.canStart} onClick={() => void onStart()}>
-        {pendingAction === "start" ? "Starting..." : "Start Run"}
+        {pendingAction === "start" ? t("run.starting") : t("run.start")}
       </button>
       <button disabled={!controls.canPause} onClick={() => void onPause()}>
-        {pendingAction === "pause" ? "Pausing..." : "Pause"}
+        {pendingAction === "pause" ? t("run.pausing") : t("run.pause")}
       </button>
       <button disabled={!controls.canResume} onClick={() => void onResume()}>
-        {pendingAction === "resume" ? "Resuming..." : "Resume"}
+        {pendingAction === "resume" ? t("run.resuming") : t("run.resume")}
       </button>
       <button disabled={!controls.canCancel} onClick={() => void onCancel()}>
-        {pendingAction === "cancel" ? "Canceling..." : "Cancel"}
+        {pendingAction === "cancel" ? t("run.canceling") : t("run.cancel")}
       </button>
       {run?.pending_confirmation_summary ? (
         <ApprovalPreview
@@ -106,6 +107,7 @@ function getActivityText(
   status: string,
   pendingAction: RunAction | null,
   now: number,
+  t: ReturnType<typeof useI18n>["t"],
 ) {
   if (!run || pendingAction || status !== "running") return null;
 
@@ -113,9 +115,9 @@ function getActivityText(
   const elapsedSeconds = Number.isNaN(updatedAt)
     ? null
     : Math.max(0, Math.floor((now - updatedAt) / 1000));
-  const elapsed = elapsedSeconds === null ? "" : ` for ${formatDuration(elapsedSeconds)}`;
-  const phase = run.steps === 0 ? "first model response" : "next model or tool result";
-  return `Working${elapsed}. Waiting for ${phase}.`;
+  const elapsed = elapsedSeconds === null ? "" : ` ${formatDuration(elapsedSeconds)}`;
+  const phase = run.steps === 0 ? t("run.waitingFirst") : t("run.waitingNext");
+  return `${t("run.working")}${elapsed}. ${phase}`;
 }
 
 function formatDuration(totalSeconds: number) {

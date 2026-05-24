@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPanel } from "./ChatPanel";
+import { LanguageProvider } from "../i18n";
 import type {
   BrowserSpeechRecognition,
   SpeechRecognitionErrorEventLike,
@@ -67,7 +68,7 @@ function stubSpeechSynthesis() {
 }
 
 function taskInput() {
-  return screen.getByLabelText("Task") as HTMLTextAreaElement;
+  return screen.getByLabelText("任务") as HTMLTextAreaElement;
 }
 
 function emitVoiceResult(transcript: string) {
@@ -108,13 +109,15 @@ function renderPanel(
   }> = {},
 ) {
   return render(
-    <ChatPanel
-      apiReady={true}
-      onCreateRun={props.onCreateRun ?? vi.fn().mockResolvedValue(undefined)}
-      onVoiceRunCommand={props.onVoiceRunCommand ?? vi.fn().mockResolvedValue(undefined)}
-      runStatus={props.runStatus ?? "created"}
-      hasPendingConfirmation={props.hasPendingConfirmation ?? false}
-    />,
+    <LanguageProvider initialLocale="zh-CN">
+      <ChatPanel
+        apiReady={true}
+        onCreateRun={props.onCreateRun ?? vi.fn().mockResolvedValue(undefined)}
+        onVoiceRunCommand={props.onVoiceRunCommand ?? vi.fn().mockResolvedValue(undefined)}
+        runStatus={props.runStatus ?? "created"}
+        hasPendingConfirmation={props.hasPendingConfirmation ?? false}
+      />
+    </LanguageProvider>,
   );
 }
 
@@ -125,8 +128,10 @@ describe("ChatPanel voice input", () => {
 
     renderPanel();
 
-    expect(screen.getByRole("button", { name: "Turn voice mode on" })).toBeTruthy();
-    expect(screen.getByText("Voice")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "开启语音模式" })).toBeTruthy();
+    expect(screen.queryByLabelText("Voice language")).toBeNull();
+    expect(screen.queryByLabelText("语音语言")).toBeNull();
+    expect(screen.getByText("语音")).toBeTruthy();
   });
 
   it("keeps voice mode on, uses the selected language, and speaks the parsed intent", async () => {
@@ -144,13 +149,10 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "created" });
 
-    fireEvent.change(screen.getByLabelText("Voice language"), {
-      target: { value: "zh-CN" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
 
     expect(FakeRecognition.latest?.lang).toBe("zh-CN");
-    expect(screen.getByRole("button", { name: "Turn voice mode off" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "关闭语音模式" })).toBeTruthy();
 
     emitVoiceResult("打开浏览器，访问 baidu.com，开始运行");
 
@@ -174,7 +176,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun });
 
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("open example.com");
 
     await waitFor(() => expect(taskInput().value).toBe("open example.com"));
@@ -196,7 +198,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("and tell me the page title");
 
     await waitFor(() =>
@@ -214,7 +216,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create Run" }));
+    fireEvent.click(screen.getByRole("button", { name: "创建任务" }));
 
     expect(onCreateRun).toHaveBeenCalledWith("open example.com");
   });
@@ -235,7 +237,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("创建任务");
 
     await waitFor(() => expect(onCreateRun).toHaveBeenCalledWith("open example.com"));
@@ -255,7 +257,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "created" });
 
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("打开浏览器，访问 baidu.com，开始运行");
 
     await waitFor(() => expect(onCreateRun).toHaveBeenCalledWith("打开浏览器，访问 baidu.com"));
@@ -275,7 +277,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onVoiceRunCommand });
 
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("开始运行");
 
     await waitFor(() => expect(onVoiceRunCommand).toHaveBeenCalledWith("start"));
@@ -296,7 +298,7 @@ describe("ChatPanel voice input", () => {
     fireEvent.change(taskInput(), {
       target: { value: "open example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("清空输入");
 
     await waitFor(() => expect(taskInput().value).toBe(""));
@@ -315,7 +317,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onVoiceRunCommand, runStatus: "waiting_for_confirmation", hasPendingConfirmation: true });
 
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("批准");
 
     await waitFor(() =>
@@ -340,10 +342,7 @@ describe("ChatPanel voice input", () => {
 
     renderPanel({ onCreateRun, onVoiceRunCommand, runStatus: "idle" });
 
-    fireEvent.change(screen.getByLabelText("Voice language"), {
-      target: { value: "zh-CN" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Turn voice mode on" }));
+    fireEvent.click(screen.getByRole("button", { name: "开启语音模式" }));
     emitVoiceResult("那个开始一下");
 
     await waitFor(() => expect(speak).toHaveBeenCalled());

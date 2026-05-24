@@ -1,0 +1,399 @@
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+
+export type Locale = "zh-CN" | "en-US";
+
+export type TranslationKey = keyof typeof translations["en-US"];
+
+type I18nContextValue = {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: (key: TranslationKey) => string;
+};
+
+const storageKey = "computer-use-ui-language";
+
+const translations = {
+  "en-US": {
+    "app.language": "Interface language",
+    "app.title": "Computer Use for DeepSeek",
+    "app.failedRunAction": "Failed to update run",
+    "app.voiceRunRequired": "Create a run before using voice run controls.",
+    "app.voiceCommandUnavailable": "Voice command is not available in the current run state.",
+    "language.zh": "中文",
+    "language.en": "English",
+    "task.label": "Task",
+    "chat.voiceHelp": "Voice follows interface language",
+    "chat.voice": "Voice",
+    "chat.voiceOn": "Voice On",
+    "chat.turnVoiceOn": "Turn voice mode on",
+    "chat.turnVoiceOff": "Turn voice mode off",
+    "chat.toggleVoice": "Toggle voice mode",
+    "chat.voiceUnavailable": "Voice input is unavailable",
+    "chat.voiceListening": "Voice mode is listening...",
+    "chat.listening": "Listening...",
+    "chat.transcribing": "Transcribing...",
+    "chat.apiStarting": "Backend API is starting. Create Run will be enabled when ready.",
+    "chat.createRun": "Create Run",
+    "chat.creating": "Creating",
+    "chat.enterTask": "Enter a task before creating a run.",
+    "chat.failedCreate": "Failed to create run",
+    "chat.manualConfirm": "Please approve or reject pending confirmations manually.",
+    "chat.clarify": "I am not sure what you mean. Please clarify.",
+    "templates.header": "Templates",
+    "templates.research": "Research",
+    "templates.webQa": "Web QA",
+    "templates.dataExtraction": "Data Extraction",
+    "templates.formFill": "Form Fill",
+    "advanced.header": "Advanced Control",
+    "advanced.description": "Configure how the agent should see, act, recover, and evaluate this run.",
+    "advanced.mode": "Mode",
+    "advanced.browser": "browser",
+    "advanced.computer": "computer",
+    "advanced.hybrid": "hybrid",
+    "advanced.browserHint": "DOM and URL first",
+    "advanced.computerHint": "Screenshot and UI first",
+    "advanced.hybridHint": "Use both paths",
+    "advanced.actionPolicy": "Action Policy",
+    "advanced.click": "Click",
+    "advanced.type": "Type",
+    "advanced.scroll": "Scroll",
+    "advanced.download": "Download",
+    "advanced.fileAccess": "File access",
+    "advanced.shell": "Shell",
+    "advanced.approvalRules": "Approval Queue Rules",
+    "advanced.submits": "Submits",
+    "advanced.externalNav": "External nav",
+    "advanced.destructive": "Destructive",
+    "advanced.scenarios": "Scenario Packs",
+    "advanced.recorder": "Task Recorder",
+    "advanced.addWorkflowNote": "Add Workflow Note",
+    "advanced.clear": "Clear",
+    "advanced.recorderEmpty": "Record reusable workflow intent before creating a run.",
+    "advanced.workflowNote": "Reuse the current procedure as a workflow step",
+    "advanced.viewportLab": "Viewport Lab",
+    "references.header": "References",
+    "references.appended": "reference item(s) will be appended to new runs.",
+    "references.clear": "Clear References",
+    "references.empty": "Attach local articles, screenshots, notes, or data as task context.",
+    "references.failed": "Failed to read reference files",
+    "workspace.header": "Workspace",
+    "workspace.failedLoad": "Failed to load files",
+    "workspace.failedUpload": "Failed to upload file",
+    "workspace.uploading": "Uploading files...",
+    "workspace.fileReady": "file ready for the next run.",
+    "workspace.filesReady": "files ready for the next run.",
+    "history.header": "History",
+    "history.empty": "No previous runs yet.",
+    "history.showingPrefix": "Showing latest",
+    "history.showingMiddle": "of",
+    "history.showingSuffix": "runs.",
+    "replay.header": "Replay & Eval",
+    "replay.replay": "Replay Task",
+    "replay.mark": "Mark Benchmark",
+    "replay.unmark": "Unmark Benchmark",
+    "replay.empty": "Run history will become replay candidates.",
+    "benchmark.header": "Benchmark Lab",
+    "benchmark.marked": "Marked",
+    "benchmark.active": "Active",
+    "benchmark.status": "Status",
+    "run.current": "Current Run",
+    "run.none": "No run created",
+    "run.currentTask": "Current Task",
+    "run.start": "Start Run",
+    "run.starting": "Starting...",
+    "run.pause": "Pause",
+    "run.pausing": "Pausing...",
+    "run.resume": "Resume",
+    "run.resuming": "Resuming...",
+    "run.cancel": "Cancel",
+    "run.canceling": "Canceling...",
+    "run.pendingStart": "Starting run...",
+    "run.pendingPause": "Pausing run...",
+    "run.pendingResume": "Resuming run...",
+    "run.pendingCancel": "Canceling run...",
+    "run.pendingApprove": "Approving action...",
+    "run.pendingReject": "Rejecting action...",
+    "run.working": "Working",
+    "run.waitingFirst": "Waiting for first model response.",
+    "run.waitingNext": "Waiting for next model or tool result.",
+    "inspector.audit": "Audit Trail",
+    "inspector.empty": "Run audit events will appear here.",
+    "inspector.stepDetails": "Step Details",
+    "inspector.selectStep": "Select a step to inspect it.",
+    "inspector.report": "Run Report",
+    "inspector.steps": "Steps",
+    "inspector.tokens": "Tokens",
+    "inspector.cost": "Cost",
+    "inspector.screenshots": "Screenshots",
+    "inspector.cacheHits": "Cache hits",
+    "inspector.errors": "Errors",
+    "inspector.step": "Step",
+    "operations.header": "Agent Operations",
+    "operations.loop": "Live Context Loop",
+    "operations.loopContext": "Screenshot + previous context",
+    "operations.loopModel": "Model response",
+    "operations.loopAction": "Execute action",
+    "operations.loopState": "Capture new state",
+    "operations.dom": "URL + DOM Inspector",
+    "operations.mode": "Mode",
+    "operations.viewport": "Viewport",
+    "operations.url": "URL",
+    "operations.urlMissing": "Not reported by runtime yet",
+    "operations.domPath": "DOM path",
+    "operations.visualFirst": "visual-first fallback",
+    "operations.domFirst": "DOM-first when available",
+    "operations.approvalQueue": "Approval Queue",
+    "operations.noApprovals": "No pending approval requests.",
+    "operations.submitApproval": "Submit/publish actions require approval.",
+    "operations.externalApproval": "External navigation requires approval.",
+    "operations.destructiveApproval": "Destructive actions require approval.",
+    "operations.recovery": "Self-Healing Strategy",
+    "operations.recoverySettle": "Wait for the page or desktop state to settle, then capture a fresh screenshot.",
+    "operations.recoveryDom": "Prefer DOM or URL evidence for browser tasks before falling back to visual clicks.",
+    "operations.recoveryRetry": "Retry failed clicks with a nearby coordinate only after checking the target label.",
+    "operations.recoveryStop": "Stop and ask for confirmation before destructive, paid, or irreversible actions.",
+    "operations.recoveryTakeover": "Offer manual takeover when the page is blocked by login, captcha, or policy gates.",
+    "operations.recent": "Recent Context",
+    "operations.emptyRecent": "Run events will appear here.",
+    "artifacts.header": "Artifacts",
+    "artifacts.failed": "Failed to load artifacts",
+    "artifacts.empty": "Output files and final results will appear here.",
+    "approval.header": "Approval Required",
+    "approval.raw": "Raw action details",
+    "approval.approve": "Approve",
+    "approval.approving": "Approving...",
+    "approval.reject": "Reject",
+    "approval.rejecting": "Rejecting...",
+    "approval.review": "Review the action before continuing.",
+    "approval.command": "Command",
+    "approval.computerAction": "Computer action",
+    "approval.fileAction": "File action on",
+  },
+  "zh-CN": {
+    "app.language": "界面语言",
+    "app.title": "Computer Use for DeepSeek",
+    "app.failedRunAction": "更新运行失败",
+    "app.voiceRunRequired": "请先创建运行，再使用语音运行控制。",
+    "app.voiceCommandUnavailable": "当前运行状态下无法使用该语音命令。",
+    "language.zh": "中文",
+    "language.en": "English",
+    "task.label": "任务",
+    "chat.voiceHelp": "语音跟随界面语言",
+    "chat.voice": "语音",
+    "chat.voiceOn": "语音开启",
+    "chat.turnVoiceOn": "开启语音模式",
+    "chat.turnVoiceOff": "关闭语音模式",
+    "chat.toggleVoice": "切换语音模式",
+    "chat.voiceUnavailable": "当前浏览器不支持语音输入",
+    "chat.voiceListening": "语音模式正在监听...",
+    "chat.listening": "正在监听...",
+    "chat.transcribing": "正在转写...",
+    "chat.apiStarting": "后端 API 正在启动，准备好后即可创建任务。",
+    "chat.createRun": "创建任务",
+    "chat.creating": "创建中",
+    "chat.enterTask": "请先输入任务再创建运行。",
+    "chat.failedCreate": "创建任务失败",
+    "chat.manualConfirm": "请手动批准或拒绝当前确认。",
+    "chat.clarify": "我不确定你的意思，请再说明一下。",
+    "templates.header": "模板",
+    "templates.research": "研究",
+    "templates.webQa": "网页 QA",
+    "templates.dataExtraction": "数据提取",
+    "templates.formFill": "表单填写",
+    "advanced.header": "高级控制",
+    "advanced.description": "配置智能体如何观察、行动、恢复和评估这次运行。",
+    "advanced.mode": "模式",
+    "advanced.browser": "浏览器",
+    "advanced.computer": "计算机",
+    "advanced.hybrid": "混合",
+    "advanced.browserHint": "优先 DOM 和 URL",
+    "advanced.computerHint": "优先截图和 UI",
+    "advanced.hybridHint": "两种路径都使用",
+    "advanced.actionPolicy": "动作权限",
+    "advanced.click": "点击",
+    "advanced.type": "输入",
+    "advanced.scroll": "滚动",
+    "advanced.download": "下载",
+    "advanced.fileAccess": "文件访问",
+    "advanced.shell": "Shell",
+    "advanced.approvalRules": "审批规则",
+    "advanced.submits": "提交",
+    "advanced.externalNav": "外部跳转",
+    "advanced.destructive": "破坏性动作",
+    "advanced.scenarios": "场景包",
+    "advanced.recorder": "任务录制器",
+    "advanced.addWorkflowNote": "添加流程备注",
+    "advanced.clear": "清空",
+    "advanced.recorderEmpty": "创建任务前可记录可复用的流程意图。",
+    "advanced.workflowNote": "将当前过程复用为工作流步骤",
+    "advanced.viewportLab": "视口实验室",
+    "references.header": "参考资料",
+    "references.appended": "个参考项会附加到新任务。",
+    "references.clear": "清空参考资料",
+    "references.empty": "附加本地文章、截图、笔记或数据作为任务上下文。",
+    "references.failed": "读取参考文件失败",
+    "workspace.header": "工作区",
+    "workspace.failedLoad": "加载文件失败",
+    "workspace.failedUpload": "上传文件失败",
+    "workspace.uploading": "正在上传文件...",
+    "workspace.fileReady": "个文件已准备好，会用于下一次运行。",
+    "workspace.filesReady": "个文件已准备好，会用于下一次运行。",
+    "history.header": "历史记录",
+    "history.empty": "还没有历史运行。",
+    "history.showingPrefix": "显示最近",
+    "history.showingMiddle": "条，共",
+    "history.showingSuffix": "条运行。",
+    "replay.header": "回放与评估",
+    "replay.replay": "回放任务",
+    "replay.mark": "标记基准",
+    "replay.unmark": "取消基准",
+    "replay.empty": "历史运行会成为可回放候选。",
+    "benchmark.header": "基准实验室",
+    "benchmark.marked": "已标记",
+    "benchmark.active": "当前",
+    "benchmark.status": "状态",
+    "run.current": "当前运行",
+    "run.none": "尚未创建运行",
+    "run.currentTask": "当前任务",
+    "run.start": "开始运行",
+    "run.starting": "启动中...",
+    "run.pause": "暂停",
+    "run.pausing": "暂停中...",
+    "run.resume": "继续",
+    "run.resuming": "继续中...",
+    "run.cancel": "取消",
+    "run.canceling": "取消中...",
+    "run.pendingStart": "正在启动运行...",
+    "run.pendingPause": "正在暂停运行...",
+    "run.pendingResume": "正在继续运行...",
+    "run.pendingCancel": "正在取消运行...",
+    "run.pendingApprove": "正在批准动作...",
+    "run.pendingReject": "正在拒绝动作...",
+    "run.working": "正在工作",
+    "run.waitingFirst": "等待第一次模型响应。",
+    "run.waitingNext": "等待下一次模型或工具结果。",
+    "inspector.audit": "审计轨迹",
+    "inspector.empty": "运行审计事件会显示在这里。",
+    "inspector.stepDetails": "步骤详情",
+    "inspector.selectStep": "选择一个步骤查看详情。",
+    "inspector.report": "运行报告",
+    "inspector.steps": "步骤",
+    "inspector.tokens": "Token",
+    "inspector.cost": "成本",
+    "inspector.screenshots": "截图",
+    "inspector.cacheHits": "缓存命中",
+    "inspector.errors": "错误",
+    "inspector.step": "步骤",
+    "operations.header": "智能体运行态",
+    "operations.loop": "实时上下文循环",
+    "operations.loopContext": "截图 + 历史上下文",
+    "operations.loopModel": "模型响应",
+    "operations.loopAction": "执行动作",
+    "operations.loopState": "捕获新状态",
+    "operations.dom": "URL + DOM 检查器",
+    "operations.mode": "模式",
+    "operations.viewport": "视口",
+    "operations.url": "URL",
+    "operations.urlMissing": "运行时尚未报告",
+    "operations.domPath": "DOM 路径",
+    "operations.visualFirst": "视觉优先兜底",
+    "operations.domFirst": "可用时优先 DOM",
+    "operations.approvalQueue": "审批队列",
+    "operations.noApprovals": "当前没有待审批请求。",
+    "operations.submitApproval": "提交/发布动作需要审批。",
+    "operations.externalApproval": "外部跳转需要审批。",
+    "operations.destructiveApproval": "破坏性动作需要审批。",
+    "operations.recovery": "自恢复策略",
+    "operations.recoverySettle": "等待页面或桌面状态稳定，然后重新截图。",
+    "operations.recoveryDom": "浏览器任务优先使用 DOM 或 URL 证据，再回退到视觉点击。",
+    "operations.recoveryRetry": "点击失败后先核对目标标签，再谨慎尝试邻近坐标。",
+    "operations.recoveryStop": "遇到破坏性、付费或不可逆动作时停止并请求确认。",
+    "operations.recoveryTakeover": "遇到登录、验证码或策略阻断时提供人工接管。",
+    "operations.recent": "最近上下文",
+    "operations.emptyRecent": "运行事件会显示在这里。",
+    "artifacts.header": "产物",
+    "artifacts.failed": "加载产物失败",
+    "artifacts.empty": "输出文件和最终结果会显示在这里。",
+    "approval.header": "需要审批",
+    "approval.raw": "原始动作详情",
+    "approval.approve": "批准",
+    "approval.approving": "批准中...",
+    "approval.reject": "拒绝",
+    "approval.rejecting": "拒绝中...",
+    "approval.review": "继续前请检查该动作。",
+    "approval.command": "命令",
+    "approval.computerAction": "计算机动作",
+    "approval.fileAction": "文件动作",
+  },
+} as const;
+
+const fallbackValue: I18nContextValue = {
+  locale: "en-US",
+  setLocale: () => undefined,
+  t: (key) => translations["en-US"][key],
+};
+
+const I18nContext = createContext<I18nContextValue>(fallbackValue);
+
+export function LanguageProvider({
+  children,
+  initialLocale,
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(() => initialLocale ?? readInitialLocale());
+
+  useEffect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = locale;
+    try {
+      window.localStorage.setItem(storageKey, locale);
+    } catch {
+      // localStorage may be unavailable; language switching still works for this session.
+    }
+  }, [locale]);
+
+  const value = useMemo<I18nContextValue>(
+    () => ({
+      locale,
+      setLocale: setLocaleState,
+      t: (key) => translations[locale][key] ?? translations["en-US"][key],
+    }),
+    [locale],
+  );
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n() {
+  return useContext(I18nContext);
+}
+
+export function LanguageSwitcher() {
+  const { locale, setLocale, t } = useI18n();
+  return (
+    <label className="language-switcher">
+      <span>{t("app.language")}</span>
+      <select
+        aria-label={t("app.language")}
+        value={locale}
+        onChange={(event) => setLocale(event.target.value as Locale)}
+      >
+        <option value="zh-CN">{t("language.zh")}</option>
+        <option value="en-US">{t("language.en")}</option>
+      </select>
+    </label>
+  );
+}
+
+function readInitialLocale(): Locale {
+  if (typeof window === "undefined") return "en-US";
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored === "zh-CN" || stored === "en-US") return stored;
+  } catch {
+    // Ignore storage access failures.
+  }
+  return window.navigator.language.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+}

@@ -33,12 +33,14 @@ import {
 } from "./components/advancedControls";
 import { getRunControlState, type RunAction } from "./components/runControlState";
 import { createOverlayModel } from "./components/runEventView";
+import { LanguageSwitcher, useI18n } from "./i18n";
 import type { Run, RunEvent, RunHistoryItem } from "./types";
 import "./styles.css";
 
 const pollingStatuses = new Set(["created", "running", "waiting_for_confirmation", "paused"]);
 
 export default function App() {
+  const { t, locale } = useI18n();
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState("idle");
   const [finalText, setFinalText] = useState<string | null>(null);
@@ -154,7 +156,7 @@ export default function App() {
       setSelectedEvent(updatedEvents[updatedEvents.length - 1] ?? null);
       setHistory(updatedHistory);
     } catch (err) {
-      setRunActionError(err instanceof Error ? err.message : `Failed to ${actionName} run`);
+      setRunActionError(err instanceof Error ? err.message : `${t("app.failedRunAction")}: ${actionName}`);
       try {
         const [updatedRun, updatedEvents, updatedHistory] = await Promise.all([
           getRun(runId),
@@ -178,7 +180,7 @@ export default function App() {
   async function onVoiceRunCommand(
     actionName: Extract<RunAction, "start" | "pause" | "resume" | "cancel">,
   ): Promise<string | null> {
-    if (!runId) return "Create a run before using voice run controls.";
+    if (!runId) return t("app.voiceRunRequired");
     const controls = getRunControlState(status, Boolean(runId), pendingRunAction);
     const allowed = {
       start: controls.canStart,
@@ -187,7 +189,7 @@ export default function App() {
       cancel: controls.canCancel,
     };
     if (!allowed[actionName]) {
-      return `Voice command "${actionName}" is not available while the run is ${status}.`;
+      return `${t("app.voiceCommandUnavailable")} (${actionName}, ${status})`;
     }
     const actions = {
       start: startRun,
@@ -215,7 +217,7 @@ export default function App() {
   const activeEvent = selectedEvent ?? events[events.length - 1] ?? null;
 
   function selectTemplate(template: TaskTemplate) {
-    updateTaskDraft(`${template.task}\n\nTarget:\nOutput:\nConstraints:`);
+    updateTaskDraft(`${template.task}\n\n${taskScaffold(locale)}`);
   }
 
   function replayTask(task: string) {
@@ -224,7 +226,7 @@ export default function App() {
 
   function applyScenario(scenario: ScenarioPack) {
     setControlProfile((current) => ({ ...current, mode: scenario.recommendedMode }));
-    updateTaskDraft(`${scenario.task}\n\nTarget:\nOutput:\nConstraints:`);
+    updateTaskDraft(`${scenario.task}\n\n${taskScaffold(locale)}`);
   }
 
   function updateTaskDraft(nextTask: string) {
@@ -235,7 +237,8 @@ export default function App() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <h1>Computer Use for DeepSeek</h1>
+        <h1>{t("app.title")}</h1>
+        <LanguageSwitcher />
         <ChatPanel
           onCreateRun={onCreateRun}
           onVoiceRunCommand={onVoiceRunCommand}
@@ -304,4 +307,8 @@ function buildTaskWithRunContext(
   const executionProfile = formatExecutionProfile(controlProfile);
   if (!referenceContext.trim()) return `${trimmedTask}${executionProfile}`;
   return `${trimmedTask}${executionProfile}${referenceContext}`;
+}
+
+function taskScaffold(locale: string) {
+  return locale === "zh-CN" ? "目标：\n输出：\n约束：" : "Target:\nOutput:\nConstraints:";
 }

@@ -32,6 +32,30 @@ body {
   margin: 0;
 }
 
+.language-switcher {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d8dde6;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef3f8 100%);
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.language-switcher select {
+  height: 34px;
+  border: 1px solid #b8c0cc;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d2430;
+  padding: 0 8px;
+  font-weight: 600;
+}
+
 .workspace {
   padding: 20px;
   display: grid;
@@ -72,13 +96,9 @@ body {
   gap: 8px;
 }
 
-.voice-controls select {
-  height: 36px;
-  border: 1px solid #b8c0cc;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #1d2430;
-  padding: 0 8px;
+.voice-language-hint {
+  max-width: 112px;
+  text-align: right;
 }
 
 .sr-only {

@@ -2,10 +2,10 @@ import { Mic } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { interpretVoice } from "../api";
 import type { VoiceInterpretation } from "../api";
+import { useI18n } from "../i18n";
 import type { RunAction } from "./runControlState";
 import {
   appendRecognizedText,
-  getDefaultVoiceLanguage,
   parseVoiceCommand,
   speakVoiceFeedback,
 } from "./voiceInput";
@@ -24,12 +24,6 @@ type Props = {
 };
 
 const voiceModeStorageKey = "computer-use-voice-mode";
-const voiceLanguageStorageKey = "computer-use-voice-language";
-
-const voiceLanguageOptions = [
-  { value: "zh-CN", label: "中文" },
-  { value: "en-US", label: "English" },
-];
 
 function readStoredValue(key: string, fallback: string): string {
   if (typeof window === "undefined") return fallback;
@@ -95,20 +89,14 @@ export function ChatPanel({
   taskDraft,
   taskDraftRevision,
 }: Props) {
+  const { locale, t } = useI18n();
   const [task, setTask] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voiceModeEnabled, setVoiceModeEnabled] = useState(
     () => readStoredValue(voiceModeStorageKey, "off") === "on",
   );
-  const [voiceLanguage, setVoiceLanguage] = useState(() =>
-    readStoredValue(
-      voiceLanguageStorageKey,
-      getDefaultVoiceLanguage(
-        typeof window === "undefined" ? undefined : window.navigator.language,
-      ),
-    ),
-  );
+  const voiceLanguage = locale;
 
   useEffect(() => {
     if (taskDraft !== undefined) setTask(taskDraft);
@@ -124,7 +112,7 @@ export function ChatPanel({
   const createRunFromCurrentTask = useCallback(
     async (taskText = task) => {
       if (!taskText.trim() || !apiReady) {
-        setError("Enter a task before creating a run.");
+        setError(t("chat.enterTask"));
         return;
       }
       setBusy(true);
@@ -133,12 +121,12 @@ export function ChatPanel({
         await onCreateRun(taskText.trim());
         setTask("");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to create run");
+        setError(err instanceof Error ? err.message : t("chat.failedCreate"));
       } finally {
         setBusy(false);
       }
     },
-    [apiReady, onCreateRun, task],
+    [apiReady, onCreateRun, task, t],
   );
 
   const handleVoiceRunCommand = useCallback(
@@ -155,7 +143,7 @@ export function ChatPanel({
       try {
         const interpretation = await interpretVoice({
           transcript: recognizedText,
-          language: getDefaultVoiceLanguage(window.navigator.language),
+          language: voiceLanguage,
           current_task: task,
           run_status: runStatus,
           has_pending_confirmation: hasPendingConfirmation,
@@ -163,13 +151,11 @@ export function ChatPanel({
 
         if (interpretation.manual_confirmation_required) {
           setError(
-            interpretation.message ?? "Please approve or reject pending confirmations manually.",
+            interpretation.message ?? t("chat.manualConfirm"),
           );
           speak(
             interpretation.message ??
-              (voiceLanguage.startsWith("zh")
-                ? "请手动批准或拒绝当前确认。"
-                : "Please approve or reject pending confirmations manually."),
+              t("chat.manualConfirm"),
           );
           return;
         }
@@ -177,9 +163,7 @@ export function ChatPanel({
         if (interpretation.needs_clarification) {
           const message =
             interpretation.message ??
-            (voiceLanguage.startsWith("zh")
-              ? "我不确定你的意思，请再说明一下。"
-              : "I am not sure what you mean. Please clarify.");
+            t("chat.clarify");
           setError(message);
           speak(message);
           return;
@@ -234,12 +218,8 @@ export function ChatPanel({
       } catch {
         const command = parseVoiceCommand(recognizedText);
         if (command === "manual_confirmation_required") {
-          setError("Please approve or reject pending confirmations manually.");
-          speak(
-            voiceLanguage.startsWith("zh")
-              ? "请手动批准或拒绝当前确认。"
-              : "Please approve or reject pending confirmations manually.",
-          );
+          setError(t("chat.manualConfirm"));
+          speak(t("chat.manualConfirm"));
           return;
         }
         if (command === "create_run") {
@@ -288,6 +268,7 @@ export function ChatPanel({
       runStatus,
       speak,
       task,
+      t,
       voiceLanguage,
     ],
   );
@@ -310,50 +291,31 @@ export function ChatPanel({
     });
   }
 
-  function updateVoiceLanguage(language: string) {
-    setVoiceLanguage(language);
-    writeStoredValue(voiceLanguageStorageKey, language);
-  }
-
   const voiceStatus =
     voiceInput.status === "listening"
       ? voiceModeEnabled
-        ? "Voice mode is listening..."
-        : "Listening..."
+        ? t("chat.voiceListening")
+        : t("chat.listening")
       : voiceInput.status === "transcribing"
-        ? "Transcribing..."
+        ? t("chat.transcribing")
         : voiceInput.error;
 
   return (
     <form className="panel chat-panel" onSubmit={submit}>
       <div className="task-header">
-        <label htmlFor="task">Task</label>
+        <label htmlFor="task">{t("task.label")}</label>
         <div className="voice-controls">
-          <label className="sr-only" htmlFor="voice-language">
-            Voice language
-          </label>
-          <select
-            id="voice-language"
-            value={voiceLanguage}
-            aria-label="Voice language"
-            onChange={(event) => updateVoiceLanguage(event.target.value)}
-          >
-            {voiceLanguageOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <span className="status-text voice-language-hint">{t("chat.voiceHelp")}</span>
           <button
             type="button"
             className={`icon-button voice-button ${voiceModeEnabled ? "active" : ""}`}
             disabled={!voiceInput.supported}
-            aria-label={voiceModeEnabled ? "Turn voice mode off" : "Turn voice mode on"}
-            title={voiceInput.supported ? "Toggle voice mode" : "Voice input is unavailable"}
+            aria-label={voiceModeEnabled ? t("chat.turnVoiceOff") : t("chat.turnVoiceOn")}
+            title={voiceInput.supported ? t("chat.toggleVoice") : t("chat.voiceUnavailable")}
             onClick={toggleVoiceMode}
           >
             <Mic size={16} aria-hidden="true" />
-            <span>{voiceModeEnabled ? "Voice On" : "Voice"}</span>
+            <span>{voiceModeEnabled ? t("chat.voiceOn") : t("chat.voice")}</span>
           </button>
         </div>
       </div>
@@ -364,11 +326,11 @@ export function ChatPanel({
         </div>
       ) : null}
       {!apiReady ? (
-        <div className="status-text">Backend API is starting. Create Run will be enabled when ready.</div>
+        <div className="status-text">{t("chat.apiStarting")}</div>
       ) : null}
       {error ? <div className="error-text">{error}</div> : null}
       <button type="submit" disabled={busy || !apiReady}>
-        {busy ? "Creating" : "Create Run"}
+        {busy ? t("chat.creating") : t("chat.createRun")}
       </button>
     </form>
   );

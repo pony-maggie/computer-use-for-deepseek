@@ -79,6 +79,11 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - sandbox computer iframe
   - run controls
   - timeline placeholder
+- Implemented bilingual interface and voice-language alignment:
+  - global Chinese/English interface language switch
+  - voice recognition language follows the interface language
+  - removed the separate voice language selector to avoid confusing it with app language
+  - localized core panels, templates, scenario packs, run controls, audit/report surfaces, operations, artifacts, references, workspace, replay, and approvals
 - Implemented run execution controls:
   - start endpoint wired to AgentCore
   - missing DeepSeek API key guard
@@ -99,6 +104,10 @@ This file is the project memory for future agent sessions. Update it whenever sc
 
 ## Latest Verification
 
+- 2026-05-24: `cd web && npm test -- i18n.test.tsx ChatPanel.test.tsx ApprovalPreview.test.tsx RunControls.test.tsx RunHistoryPanel.test.tsx RunInspector.test.tsx` passed with 18 tests.
+- 2026-05-24: `cd web && npm run build` passed after bilingual UI changes.
+- 2026-05-24: Browser E2E on `http://localhost:5173/` confirmed Chinese default UI, English switch, `document.documentElement.lang === "en-US"` after switching, voice hint follows interface language, and no `Voice language` / `语音语言` selector text remains.
+- 2026-05-24: `cd web && npm test` passed with 53 tests after bilingual UI changes.
 - 2026-05-17: `./init.sh` passed.
 - Output confirmed required harness and planning files are present.
 - Output confirmed `feature_list.json` is valid JSON.

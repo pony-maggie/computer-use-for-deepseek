@@ -1,6 +1,6 @@
 # 本地验收流程
 
-本文用于验收 `computer use for deepseek` 的本地运行路径。目标是确认普通用户只需要准备 DeepSeek API Key、Docker 和浏览器，就能通过 Web UI 使用产品；同时确认 runtime、文件流、安全确认、成本控制和基础自动化能力可用。
+本文用于验收 `Computer Use for DeepSeek` 的本地运行路径。目标是确认普通用户只需要准备 DeepSeek API Key、Docker 和浏览器，就能通过 Web UI 使用产品；同时确认 runtime、文件流、安全确认、成本控制、多语言界面、运行监督和基础自动化能力可用。
 
 ## 1. 验收范围
 
@@ -9,6 +9,9 @@
 - 本地启动和停止流程。
 - 预构建 runtime 镜像拉取和运行。
 - Web UI 创建任务、启动任务、暂停/恢复/取消任务。
+- 中文/英文界面切换，且语音识别语言跟随界面语言。
+- 任务模板、参考资料、场景包、工作流备注和高级控制。
+- 运行检查器、操作预览、审批预览、产物中心、历史记录和回放评估。
 - noVNC 桌面画面可见。
 - 文件上传、AI 工作区访问、结果下载。
 - DeepSeek API Key 缺失时的用户提示。
@@ -226,16 +229,20 @@ macOS 上 `sed -i.bak` 会额外留下 `.env.bak`，可手动删除。
 打开浏览器，访问 example.com，然后告诉我页面标题。
 ```
 
-点击左侧 `Create Run` 创建 run。创建成功后，右上角会出现当前 run 摘要和操作按钮。
+点击左侧 `Create Run` / `创建任务` 创建 run。创建成功后，右上角会出现当前 run 摘要和操作按钮。
 
-点击右上角 `Start Run` 启动这个 run。
+点击右上角 `Start Run` / `开始运行` 启动这个 run。
 
 验收时观察：
 
 - run 状态从 created/running 变更到 completed 或可解释的 failed。
 - 右侧或桌面区域可以看到 noVNC 画面。
-- timeline/event 区域有创建、启动、使用量或完成状态记录。
+- Audit Trail / 审计轨迹区域有创建、启动、使用量或完成状态记录。
+- Step Details / 步骤详情可以查看所选事件的结构化 JSON。
+- Run Report / 运行报告显示 steps、tokens、cost、screenshots、cache hits、errors。
 - run controls 显示模型名、step 用量、token 用量、cache hit/miss、估算费用。
+- Agent Operations / 智能体运行态显示 live context loop、URL/DOM inspector、approval queue、self-healing strategy 和 recent context。
+- Artifacts / 产物区域显示最终文本、输出文件和最近截图。
 
 验收通过标准：
 
@@ -243,6 +250,73 @@ macOS 上 `sed -i.bak` 会额外留下 `.env.bak`，可手动删除。
 - runtime 桌面会执行可见动作。
 - 任务最终给出可读结果，或在限制内给出明确 blocker。
 - UI 不要求用户理解或操作 Docker 命令。
+
+### 9.1 多语言界面验收
+
+在左侧顶部找到 `界面语言` / `Interface language` 选择器。
+
+操作步骤：
+
+1. 选择 `中文`。
+2. 确认左侧任务区显示 `任务`、`创建任务`、`模板`、`高级控制`、`参考资料`、`工作区`。
+3. 确认语音区域显示 `语音跟随界面语言`。
+4. 选择 `English`。
+5. 确认左侧任务区显示 `Task`、`Create Run`、`Templates`、`Advanced Control`、`References`、`Workspace`。
+6. 确认语音区域显示 `Voice follows interface language`。
+7. 刷新页面，确认上一次选择的界面语言仍然保留。
+
+验收通过标准：
+
+- 页面不再出现独立的 `Voice language` 或 `语音语言` 选择器。
+- 语音识别语言跟随界面语言；中文界面使用 `zh-CN`，英文界面使用 `en-US`。
+- 核心 UI 文案在中英文之间切换，不影响 run 状态、任务内容、模型返回和文件名等动态内容。
+
+### 9.2 模板、参考资料、场景包和高级控制验收
+
+模板验收：
+
+1. 点击 `Templates` / `模板` 中的 `Research` / `研究`。
+2. 确认任务输入框填入模板任务，并追加 `Target/Output/Constraints` 或 `目标/输出/约束` 脚手架。
+3. 切换语言后再次点击模板，确认模板标签和脚手架语言随界面语言变化。
+
+参考资料验收：
+
+1. 在 `References` / `参考资料` 上传一个 `.txt`、`.md`、`.png` 或截图文件。
+2. 确认参考资料列表显示文件名和类型。
+3. 创建 run 前确认提示显示参考项会附加到新任务。
+4. 点击 `Clear References` / `清空参考资料` 后，参考资料列表清空。
+
+高级控制验收：
+
+1. 在 `Advanced Control` / `高级控制` 中切换 `browser`、`computer`、`hybrid`。
+2. 勾选或取消 action policy，例如 click、type、download、file access。
+3. 勾选或取消 approval rules，例如 submits、external nav、destructive。
+4. 点击一个 scenario pack，例如 Research Report / 研究报告。
+5. 确认任务输入框被填入场景任务，并且 mode 切到该场景推荐模式。
+6. 点击 `Add Workflow Note` / `添加流程备注`，确认工作流备注出现；点击 `Clear` / `清空` 后备注清空。
+7. 切换 viewport lab 的 Desktop、Tablet、Mobile，确认 Agent Operations 中 viewport 数值变化。
+
+验收通过标准：
+
+- 模板、参考资料、场景包、高级控制均可在创建 run 前影响任务上下文。
+- Execution Profile 会随 mode、action policy、approval rules、viewport、workflow notes 注入任务上下文。
+- replay 历史任务时，不应重复叠加旧的 Execution Profile 或 Reference Context。
+
+### 9.3 历史记录、回放评估和产物中心验收
+
+执行至少一个 run 后：
+
+1. 在 `History` / `历史记录` 中选择刚完成或失败的 run。
+2. 确认右侧 Run Controls、Audit Trail、Run Report、Agent Operations、Artifacts 跟随所选 run 更新。
+3. 在 `Replay & Eval` / `回放与评估` 中点击 `Replay Task` / `回放任务`。
+4. 确认原任务回填到任务输入框。
+5. 点击 `Mark Benchmark` / `标记基准`，确认 Benchmark Lab / 基准实验室显示 marked 数量、active run 和 status。
+
+验收通过标准：
+
+- 历史记录可以切换 run。
+- 回放只回填用户任务，不重复带入旧的运行 profile/reference block。
+- 产物中心可以显示 final text、workspace 输出文件和截图缩略图。
 
 ## 10. 文件工作区验收
 
@@ -262,7 +336,7 @@ macOS 上 `sed -i.bak` 会额外留下 `.env.bak`，可手动删除。
 3. 输入任务：
 
 ```text
-读取我上传的 input.md，把内容改写得更正式，并保存为 output.txt。
+读取我上传的 input.txt，把内容改写得更正式，并保存为 output.txt。
 ```
 
 验收通过标准：
@@ -283,13 +357,13 @@ macOS 上 `sed -i.bak` 会额外留下 `.env.bak`，可手动删除。
 
 验收通过标准：
 
-- 文件编辑类工具调用进入等待确认状态，并在 Current Run 区域显示 `Approval Required`。
-- `Approval Required` 区域会显示待确认动作摘要，例如 `bash: ...` 或 `text_editor create: ...`。
-- 展开 `Details` 可以查看完整 tool call 参数。
+- 文件编辑类工具调用进入等待确认状态，并在 Current Run 区域显示 `Approval Required` / `需要审批`。
+- 审批区域会显示待确认动作摘要，例如 `bash: ...` 或 `text_editor create: ...`。
+- 展开 `Raw action details` / `原始动作详情` 可以查看完整 tool call 参数。
 - 用户没有确认前，不应静默执行敏感文件写入。
-- 点击 `Approve` 后，应用会执行该动作并继续当前 run。
-- 点击 `Reject` 后，run 会以 `confirmation rejected` 结束。
-- 点击 `Cancel` 后，状态应变为 `canceled`。
+- 点击 `Approve` / `批准` 后，应用会执行该动作并继续当前 run。
+- 点击 `Reject` / `拒绝` 后，run 会以 `confirmation rejected` 结束。
+- 点击 `Cancel` / `取消` 后，状态应变为 `canceled`。
 
 验收重点是：敏感动作必须先展示给用户，只有用户批准后才可以执行。
 
@@ -357,23 +431,27 @@ DEEPSEEK_OUTPUT_USD_PER_MTOK=1
 操作步骤：
 
 1. 使用 Chrome 或 Edge 打开 `http://localhost:3000`。
-2. 点击 `Task` 输入框旁边的麦克风按钮。
-3. 允许浏览器访问麦克风。
-4. 说出：`打开 example.com，然后告诉我页面标题。`
-5. 确认识别文本出现在 `Task` 输入框中。
-6. 手动编辑识别文本。
-7. 再次点击麦克风，说出：`创建任务`。
-8. 确认页面创建了 run。
-9. 再次点击麦克风，说出：`开始运行`。
-10. 确认 run 进入运行流程。
-11. 如果 run 进入 `Approval Required`，再次点击麦克风，说出：`批准`。
-12. 确认页面提示需要手动批准，不会直接执行批准。
+2. 在左侧顶部选择 `中文`。
+3. 确认语音区域显示 `语音跟随界面语言`，且页面没有 `语音语言` 独立选择器。
+4. 点击 `Task` / `任务` 输入框旁边的麦克风按钮。
+5. 允许浏览器访问麦克风。
+6. 说出：`打开 example.com，然后告诉我页面标题。`
+7. 确认识别文本出现在 `Task` / `任务` 输入框中。
+8. 手动编辑识别文本。
+9. 再次点击麦克风，说出：`创建任务`。
+10. 确认页面创建了 run。
+11. 再次点击麦克风，说出：`开始运行`。
+12. 确认 run 进入运行流程。
+13. 如果 run 进入 `Approval Required` / `需要审批`，再次点击麦克风，说出：`批准`。
+14. 确认页面提示需要手动批准，不会直接执行批准。
+15. 切换到 `English`，确认语音提示变为 `Voice follows interface language`，语音识别语言随界面语言切到英文。
 
 预期结果：
 
 - 普通语音内容只影响 `Task` 输入框内容。
 - 明确短命令可以触发创建、开始、暂停、继续、取消和清空输入。
 - `批准` 和 `拒绝` 不能通过语音直接执行。
+- 语音语言不再单独选择，始终由界面语言决定。
 - 原有按钮控制流程保持可用。
 
 如果浏览器不支持语音识别，页面应显示不可用提示，手动输入任务仍然可用。
@@ -581,8 +659,12 @@ DEEPSEEK_OUTPUT_USD_PER_MTOK=0
 - [ ] Web UI 可访问 `http://localhost:3000`。
 - [ ] noVNC 可访问 `http://localhost:6080/vnc.html`。
 - [ ] `./scripts/smoke-runtime.sh` 通过。
+- [ ] 中文/英文界面切换可用，语音语言跟随界面语言。
 - [ ] 可以创建 run 并启动任务。
 - [ ] UI 显示模型、steps、tokens、cache hit/miss、estimated cost。
+- [ ] Audit Trail、Step Details、Run Report、Agent Operations、Artifacts 可用。
+- [ ] 模板、参考资料、场景包、高级控制、viewport lab 可用。
+- [ ] 历史记录、Replay Task、Benchmark Lab 可用。
 - [ ] 文件上传、workspace 展示、结果下载可用。
 - [ ] 敏感工具调用不会静默执行。
 - [ ] token budget 或 cost budget 可触发中止。

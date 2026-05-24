@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../i18n";
 import type { RunHistoryItem } from "../types";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 const storageKey = "computer-use-benchmark-runs";
 
 export function ReplayEvaluationPanel({ history, activeRunId, onReplayTask }: Props) {
+  const { t } = useI18n();
   const [benchmarks, setBenchmarks] = useState<string[]>(() => readBenchmarks());
   const active = history.find((item) => item.run_id === activeRunId) ?? history[0] ?? null;
 
@@ -25,7 +27,7 @@ export function ReplayEvaluationPanel({ history, activeRunId, onReplayTask }: Pr
 
   return (
     <section className="panel replay-panel">
-      <div className="panel-header">Replay & Eval</div>
+      <div className="panel-header">{t("replay.header")}</div>
       {active ? (
         <>
           <div className="status-text">
@@ -34,21 +36,21 @@ export function ReplayEvaluationPanel({ history, activeRunId, onReplayTask }: Pr
           <p>{active.task}</p>
           <div className="replay-actions">
             <button type="button" onClick={() => onReplayTask(active.task)}>
-              Replay Task
+              {t("replay.replay")}
             </button>
             <button type="button" onClick={() => toggleBenchmark(active.run_id)}>
-              {benchmarks.includes(active.run_id) ? "Unmark Benchmark" : "Mark Benchmark"}
+              {benchmarks.includes(active.run_id) ? t("replay.unmark") : t("replay.mark")}
             </button>
           </div>
           {benchmarks.length ? (
             <div className="benchmark-lab">
-              <span className="eyebrow">Benchmark Lab</span>
+              <span className="eyebrow">{t("benchmark.header")}</span>
               <dl className="compact-dl">
-                <dt>Marked</dt>
+                <dt>{t("benchmark.marked")}</dt>
                 <dd>{benchmarks.length}</dd>
-                <dt>Active</dt>
+                <dt>{t("benchmark.active")}</dt>
                 <dd>{active.run_id}</dd>
-                <dt>Status</dt>
+                <dt>{t("benchmark.status")}</dt>
                 <dd>{active.status}</dd>
               </dl>
               <ul className="mini-list">
@@ -60,7 +62,7 @@ export function ReplayEvaluationPanel({ history, activeRunId, onReplayTask }: Pr
           ) : null}
         </>
       ) : (
-        <div className="status-text">Run history will become replay candidates.</div>
+        <div className="status-text">{t("replay.empty")}</div>
       )}
     </section>
   );
