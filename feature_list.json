@@ -217,6 +217,14 @@
       "status": "done",
       "dependencies": ["feat-025", "feat-026"],
       "evidence": "docs/local-acceptance.md updated for multilingual UI, advanced controls, run inspector, artifacts, history, replay, and safety approval flows. Browser E2E on 2026-05-24 found echo redirection writes were incorrectly allowed. Added a failing safety test for echo redirection, fixed SafetyPolicy redirection handling, and verified the targeted test and full safety test file passed."
+    },
+    {
+      "id": "feat-028",
+      "name": "Sandbox-first workbench layout",
+      "description": "Redesign the local web console so the sandbox computer remains the primary first-viewport surface while setup controls and live run supervision scroll independently in side rails.",
+      "status": "done",
+      "dependencies": ["feat-023", "feat-025", "feat-026"],
+      "evidence": "Design spec added and App/styles refactored to a setup/sandbox/inspector workbench. cd web && npm run build passed. Browser E2E at 1440x900 confirmed idle, long-task, running, and completed/canceled states keep the sandbox iframe fully visible in the first viewport while right rail content scrolls independently. Browser E2E at 1180x900 confirmed the responsive top row keeps setup and sandbox at 720px before the inspector row."
     }
   ]
 }

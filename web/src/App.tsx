@@ -236,7 +236,7 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <aside className="sidebar">
+      <aside className="sidebar setup-rail">
         <h1>{t("app.title")}</h1>
         <LanguageSwitcher />
         <ChatPanel
@@ -260,10 +260,13 @@ export default function App() {
           }}
         />
         <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
-        <RunHistoryPanel history={history} activeRunId={runId} onSelectRun={(id) => void selectRun(id)} />
-        <ReplayEvaluationPanel history={history} activeRunId={runId} onReplayTask={replayTask} />
       </aside>
-      <section className="workspace">
+
+      <section className="sandbox-stage" aria-label="Sandbox computer stage">
+        <ComputerPanel overlay={createOverlayModel(activeEvent)} />
+      </section>
+
+      <aside className="inspector-rail" aria-label="Run inspector">
         <RunControls
           runId={runId}
           status={status}
@@ -277,23 +280,22 @@ export default function App() {
           onApprove={() => updateRun("approve", approveRun)}
           onReject={() => updateRun("reject", rejectRun)}
         />
-        <ComputerPanel overlay={createOverlayModel(activeEvent)} />
-        <div className="bottom-workbench">
-          <RunInspector
-            run={run}
-            events={events}
-            selectedEventId={activeEvent?.id ?? null}
-            onSelectEvent={setSelectedEvent}
-          />
-          <AgentOperationsPanel
-            run={run}
-            events={events}
-            activeEvent={activeEvent}
-            profile={controlProfile}
-          />
-          <ArtifactCenter run={run} events={events} />
-        </div>
-      </section>
+        <RunHistoryPanel history={history} activeRunId={runId} onSelectRun={(id) => void selectRun(id)} />
+        <ReplayEvaluationPanel history={history} activeRunId={runId} onReplayTask={replayTask} />
+        <RunInspector
+          run={run}
+          events={events}
+          selectedEventId={activeEvent?.id ?? null}
+          onSelectEvent={setSelectedEvent}
+        />
+        <AgentOperationsPanel
+          run={run}
+          events={events}
+          activeEvent={activeEvent}
+          profile={controlProfile}
+        />
+        <ArtifactCenter run={run} events={events} />
+      </aside>
     </main>
   );
 }
