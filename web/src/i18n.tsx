@@ -169,6 +169,13 @@ const translations = {
     "approval.command": "Command",
     "approval.computerAction": "Computer action",
     "approval.fileAction": "File action on",
+    "workbench.taskAssist": "Templates & References",
+    "workbench.runSettings": "Run Settings",
+    "workbench.monitorTabs": "Run monitor tabs",
+    "workbench.overview": "Overview",
+    "workbench.steps": "Steps",
+    "workbench.files": "Files",
+    "workbench.debug": "Debug",
   },
   "zh-CN": {
     "app.language": "界面语言",
@@ -325,6 +332,13 @@ const translations = {
     "approval.command": "命令",
     "approval.computerAction": "计算机动作",
     "approval.fileAction": "文件动作",
+    "workbench.taskAssist": "模板与参考资料",
+    "workbench.runSettings": "运行设置",
+    "workbench.monitorTabs": "运行监控标签页",
+    "workbench.overview": "概览",
+    "workbench.steps": "步骤",
+    "workbench.files": "文件",
+    "workbench.debug": "调试",
   },
 } as const;
 

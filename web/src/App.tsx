@@ -55,6 +55,7 @@ export default function App() {
   const [taskDraftRevision, setTaskDraftRevision] = useState(0);
   const [controlProfile, setControlProfile] = useState<ControlProfile>(defaultControlProfile);
   const [runActionError, setRunActionError] = useState<string | null>(null);
+  const [inspectorTab, setInspectorTab] = useState<"overview" | "steps" | "files" | "debug">("overview");
 
   useEffect(() => {
     let active = true;
@@ -248,18 +249,24 @@ export default function App() {
           taskDraft={taskDraft}
           taskDraftRevision={taskDraftRevision}
         />
-        <TaskTemplatesPanel onSelectTemplate={selectTemplate} />
-        <AdvancedControlSuite
-          profile={controlProfile}
-          onProfileChange={setControlProfile}
-          onApplyScenario={applyScenario}
-        />
-        <ReferenceContextPanel
-          onContextChange={(context) => {
-            setReferenceContext(context);
-          }}
-        />
-        <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
+        <details className="setup-disclosure">
+          <summary>{t("workbench.taskAssist")}</summary>
+          <TaskTemplatesPanel onSelectTemplate={selectTemplate} />
+          <ReferenceContextPanel
+            onContextChange={(context) => {
+              setReferenceContext(context);
+            }}
+          />
+        </details>
+        <details className="setup-disclosure">
+          <summary>{t("workbench.runSettings")}</summary>
+          <AdvancedControlSuite
+            profile={controlProfile}
+            onProfileChange={setControlProfile}
+            onApplyScenario={applyScenario}
+          />
+          <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
+        </details>
       </aside>
 
       <section className="sandbox-stage" aria-label="Sandbox computer stage">
@@ -280,21 +287,50 @@ export default function App() {
           onApprove={() => updateRun("approve", approveRun)}
           onReject={() => updateRun("reject", rejectRun)}
         />
-        <RunHistoryPanel history={history} activeRunId={runId} onSelectRun={(id) => void selectRun(id)} />
-        <ReplayEvaluationPanel history={history} activeRunId={runId} onReplayTask={replayTask} />
-        <RunInspector
-          run={run}
-          events={events}
-          selectedEventId={activeEvent?.id ?? null}
-          onSelectEvent={setSelectedEvent}
-        />
-        <AgentOperationsPanel
-          run={run}
-          events={events}
-          activeEvent={activeEvent}
-          profile={controlProfile}
-        />
-        <ArtifactCenter run={run} events={events} />
+        <nav className="inspector-tabs" aria-label={t("workbench.monitorTabs")}>
+          {(["overview", "steps", "files", "debug"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={inspectorTab === tab ? "active" : ""}
+              onClick={() => setInspectorTab(tab)}
+            >
+              {t(`workbench.${tab}`)}
+            </button>
+          ))}
+        </nav>
+        {inspectorTab === "overview" ? (
+          <div className="tab-panel">
+            <ArtifactCenter run={run} events={events} />
+          </div>
+        ) : null}
+        {inspectorTab === "steps" ? (
+          <div className="tab-panel">
+            <RunInspector
+              run={run}
+              events={events}
+              selectedEventId={activeEvent?.id ?? null}
+              onSelectEvent={setSelectedEvent}
+            />
+          </div>
+        ) : null}
+        {inspectorTab === "files" ? (
+          <div className="tab-panel">
+            <ArtifactCenter run={run} events={events} />
+            <RunHistoryPanel history={history} activeRunId={runId} onSelectRun={(id) => void selectRun(id)} />
+          </div>
+        ) : null}
+        {inspectorTab === "debug" ? (
+          <div className="tab-panel">
+            <ReplayEvaluationPanel history={history} activeRunId={runId} onReplayTask={replayTask} />
+            <AgentOperationsPanel
+              run={run}
+              events={events}
+              activeEvent={activeEvent}
+              profile={controlProfile}
+            />
+          </div>
+        ) : null}
       </aside>
     </main>
   );

@@ -84,6 +84,11 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - wrote `docs/superpowers/specs/2026-05-24-sandbox-first-workbench-design.md`
   - moved the product to a three-column setup/sandbox/inspector layout
   - constrained long task text and moved live run supervision into the right inspector rail
+- Implemented Simplified Workbench v2:
+  - collapsed templates and references behind a task assistance disclosure
+  - collapsed advanced run controls and workspace upload behind run settings
+  - replaced the always-stacked right rail with Overview, Steps, Files, and Debug tabs
+  - moved history/replay/debug surfaces out of the default view
 - Implemented bilingual interface and voice-language alignment:
   - global Chinese/English interface language switch
   - voice recognition language follows the interface language
@@ -113,6 +118,8 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - 2026-05-24: Browser E2E on `http://127.0.0.1:3000/` at 1440x900 confirmed idle, long-task, running, and completed/canceled states keep the sandbox stage fixed in the first viewport. Measured sandbox iframe remained at `722x862`, `top=19`, `bottom=881`; document body stayed `900px` high while the inspector rail scrolled independently.
 - 2026-05-24: Browser E2E created and ran a long Chinese task against `https://example.com`; the run reached Example Domain with `3 steps`, `41487 tokens`, and `21504 cache-hit tokens`, then was canceled after completion during cleanup.
 - 2026-05-24: Browser E2E at 1180x900 confirmed the responsive layout keeps setup and sandbox in a fixed 720px top row, with the inspector below instead of hidden by overflow.
+- 2026-05-24: `cd web && npm run build` passed after Simplified Workbench v2.
+- 2026-05-24: Browser E2E on `http://127.0.0.1:3000/` at 1440x900 confirmed the simplified default view only shows the task composer, two collapsed setup disclosures, sandbox stage, run controls, monitor tabs, and Overview artifacts. Steps and Debug tabs render their dense panels without overlap; Debug tab content scrolls within the right rail.
 - 2026-05-24: `./start.sh` pulled latest GHCR server/web/runtime images after GitHub Actions run `26358293933` succeeded.
 - 2026-05-24: Local acceptance smoke on latest images passed for `docker compose ps`, `./scripts/smoke-runtime.sh`, health endpoint, noVNC HTTP, multilingual UI switching, templates, scenario packs, workflow notes, viewport lab, reference upload, run creation/start/completion, run report, artifacts, replay, benchmark marking, API run creation, runtime screenshot, and runtime browser_snapshot.
 - 2026-05-24: Local acceptance found safety gap: `echo -n "hello acceptance" > /workspace/hello.txt` was treated as low-risk bash. Added failing safety test and fixed `SafetyPolicy` to reject unsafe shell redirection tokens in low-risk read commands.
