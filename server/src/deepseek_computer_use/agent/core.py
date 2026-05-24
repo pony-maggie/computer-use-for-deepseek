@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from typing import Any, Protocol
 
@@ -8,7 +9,7 @@ from deepseek_computer_use.runtime.base import ComputerRuntime
 from deepseek_computer_use.safety.policy import SafetyDecision, SafetyPolicy
 
 
-ProgressCallback = Callable[[str, str], None]
+ProgressCallback = Callable[[str, dict[str, Any]], None]
 
 
 class ModelAdapter(Protocol):
@@ -100,7 +101,13 @@ class AgentCore:
         estimated_cost_usd: float,
     ) -> AgentRunResult:
         for step in range(start_step, self.max_steps + 1):
-            self._emit("model", f"Step {step}: waiting for model response")
+            previous_prompt_tokens = prompt_tokens
+            previous_completion_tokens = completion_tokens
+            previous_total_tokens = total_tokens
+            previous_cache_hit_tokens = prompt_cache_hit_tokens
+            previous_cache_miss_tokens = prompt_cache_miss_tokens
+            previous_cost = estimated_cost_usd
+            self._emit("model", f"Step {step}: waiting for model response", status="running", step=step)
             parsed = self.model.complete(messages)
             prompt_tokens += getattr(parsed, "prompt_tokens", 0)
             completion_tokens += getattr(parsed, "completion_tokens", 0)
@@ -111,6 +118,14 @@ class AgentCore:
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
             )
+            usage_delta = {
+                "prompt_tokens": prompt_tokens - previous_prompt_tokens,
+                "completion_tokens": completion_tokens - previous_completion_tokens,
+                "total_tokens": total_tokens - previous_total_tokens,
+                "prompt_cache_hit_tokens": prompt_cache_hit_tokens - previous_cache_hit_tokens,
+                "prompt_cache_miss_tokens": prompt_cache_miss_tokens - previous_cache_miss_tokens,
+                "estimated_cost_usd": round(estimated_cost_usd - previous_cost, 6),
+            }
             messages.append(parsed.assistant_message)
             if self.token_budget and total_tokens > self.token_budget:
                 return AgentRunResult(
@@ -137,12 +152,25 @@ class AgentCore:
                     estimated_cost_usd=estimated_cost_usd,
                 )
             if parsed.final_text is not None:
-                self._emit("model", f"Step {step}: model returned final answer")
+                self._emit(
+                    "model",
+                    f"Step {step}: model returned final answer",
+                    status="completed",
+                    step=step,
+                    usage_delta=usage_delta,
+                )
             else:
                 tool_call_count = len(parsed.tool_calls)
                 noun = "tool call" if tool_call_count == 1 else "tool calls"
-                self._emit("model", f"Step {step}: model requested {tool_call_count} {noun}")
+                self._emit(
+                    "model",
+                    f"Step {step}: model requested {tool_call_count} {noun}",
+                    status="completed",
+                    step=step,
+                    usage_delta=usage_delta,
+                )
             if parsed.final_text is not None:
+                self._emit("result", f"Step {step}: completed run", status="completed", step=step)
                 return AgentRunResult(
                     status=AgentStatus.completed.value,
                     final_text=parsed.final_text,
@@ -157,7 +185,13 @@ class AgentCore:
             for tool_call in parsed.tool_calls:
                 decision = self.safety.evaluate(tool_call)
                 if decision == SafetyDecision.BLOCK:
-                    self._emit("safety", f"Step {step}: blocked {self._summarize_tool_call(tool_call)}")
+                    self._emit(
+                        "safety",
+                        f"Step {step}: blocked {self._summarize_tool_call(tool_call)}",
+                        status="blocked",
+                        step=step,
+                        **self._tool_event_payload(tool_call),
+                    )
                     messages.append(
                         self.model.tool_result_message(
                             tool_call.tool_call_id,
@@ -166,9 +200,13 @@ class AgentCore:
                     )
                     continue
                 if decision == SafetyDecision.CONFIRM:
+                    summary = self._summarize_tool_call(tool_call)
                     self._emit(
                         "confirmation",
-                        f"Step {step}: waiting for approval for {self._summarize_tool_call(tool_call)}",
+                        f"Step {step}: waiting for approval for {summary}",
+                        status="waiting",
+                        step=step,
+                        **self._tool_event_payload(tool_call),
                     )
                     return AgentRunResult(
                         status=AgentStatus.waiting_for_confirmation.value,
@@ -184,11 +222,25 @@ class AgentCore:
                         agent_messages=messages,
                     )
                 summary = self._summarize_tool_call(tool_call)
-                self._emit("tool", f"Step {step}: executing {summary}")
+                tool_payload = self._tool_event_payload(tool_call)
+                self._emit(
+                    "tool",
+                    f"Step {step}: executing {summary}",
+                    status="running",
+                    step=step,
+                    **tool_payload,
+                )
                 result = await self.runtime.execute(tool_call)
                 result = self._compact_tool_result(result)
                 messages.append(self.model.tool_result_message(tool_call.tool_call_id, result))
-                self._emit("tool", f"Step {step}: completed {summary}")
+                completed_payload = {**tool_payload, **self._result_event_payload(result)}
+                self._emit(
+                    "tool",
+                    f"Step {step}: completed {summary}",
+                    status="failed" if result.error else "completed",
+                    step=step,
+                    **completed_payload,
+                )
         return AgentRunResult(
             status=AgentStatus.failed.value,
             final_text="max steps reached",
@@ -201,9 +253,9 @@ class AgentCore:
             estimated_cost_usd=estimated_cost_usd,
         )
 
-    def _emit(self, kind: str, message: str) -> None:
+    def _emit(self, kind: str, message: str, **payload: Any) -> None:
         if self.on_event is not None:
-            self.on_event(kind, message)
+            self.on_event(kind, {"message": message, **payload})
 
     def _summarize_tool_call(self, tool_call: Any) -> str:
         if getattr(tool_call, "bash", None) is not None:
@@ -218,6 +270,58 @@ class AgentCore:
         input_cost = prompt_tokens / 1_000_000 * self.input_usd_per_mtok
         output_cost = completion_tokens / 1_000_000 * self.output_usd_per_mtok
         return round(input_cost + output_cost, 6)
+
+    def _tool_event_payload(self, tool_call: Any) -> dict[str, Any]:
+        if getattr(tool_call, "computer", None) is not None:
+            action = tool_call.computer
+            return {
+                "tool_name": "computer",
+                "action_name": str(action.action),
+                "action_payload": action.model_dump(mode="json"),
+                "display": {
+                    "width": self.safety.display_width,
+                    "height": self.safety.display_height,
+                    "scale": 1.0,
+                },
+            }
+        if getattr(tool_call, "bash", None) is not None:
+            return {
+                "tool_name": "bash",
+                "action_name": "shell",
+                "action_payload": tool_call.bash.model_dump(mode="json"),
+            }
+        if getattr(tool_call, "text_editor", None) is not None:
+            return {
+                "tool_name": "text_editor",
+                "action_name": str(tool_call.text_editor.command),
+                "action_payload": tool_call.text_editor.model_dump(mode="json"),
+            }
+        return {"tool_name": getattr(tool_call, "name", "tool")}
+
+    def _result_event_payload(self, result: ToolResult) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "result_summary": result.output,
+            "error": result.error,
+        }
+        if result.image_hash or result.base64_image:
+            payload["screenshot"] = {
+                "mime_type": "image/png",
+                "base64": result.base64_image,
+                "hash": result.image_hash,
+                "cache_hit": result.perception_cache_hit,
+            }
+        display = self._display_from_system(result.system)
+        if display is not None:
+            payload["display"] = display
+        return payload
+
+    def _display_from_system(self, system: str | None) -> dict[str, float | int] | None:
+        if not system:
+            return None
+        match = re.search(r"display=(\d+)x(\d+)", system)
+        if match is None:
+            return None
+        return {"width": int(match.group(1)), "height": int(match.group(2)), "scale": 1.0}
 
     def _compact_tool_result(self, result: ToolResult) -> ToolResult:
         if not result.image_hash or not result.base64_image:

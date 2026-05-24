@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import inspect, text
 
 from deepseek_computer_use.agent.core import AgentCore
+from deepseek_computer_use.agent.events import normalize_event_payload
 from deepseek_computer_use.config import settings
 from deepseek_computer_use.models.deepseek import DeepSeekAdapter
 from deepseek_computer_use.models.protocol import AgentStatus, ToolCall
@@ -19,7 +21,7 @@ from deepseek_computer_use.persistence.database import (
     create_tables,
     session_scope,
 )
-from deepseek_computer_use.persistence.schema import RunRecord
+from deepseek_computer_use.persistence.schema import RunEventRecord, RunRecord
 from deepseek_computer_use.runtime.docker_runtime import DockerRuntime
 from deepseek_computer_use.runtime.mock_runtime import MockRuntime
 from deepseek_computer_use.runtime.run_scoped_runtime import RunScopedRuntime
@@ -86,7 +88,7 @@ class RunState(BaseModel):
     pending_confirmation: ToolCall | None = None
     pending_confirmation_summary: str | None = None
     agent_messages: list[dict[str, Any]] = Field(default_factory=list, exclude=True)
-    events: list[dict[str, str]] = Field(default_factory=list)
+    events: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class RunHistoryItem(BaseModel):
@@ -107,9 +109,9 @@ def create_run(request: CreateRunRequest) -> RunState:
         task=request.task,
         status=AgentStatus.created.value,
         model=_select_model(request.task),
-        events=[{"kind": "created", "message": "Run created"}],
     )
     _persist_run(runs[run_id])
+    _append_event(runs[run_id], "created", "Run created")
     return runs[run_id]
 
 
@@ -245,7 +247,17 @@ async def upload_file(run_id: str, file: UploadFile = File()) -> dict[str, str |
 
 
 @router.get("/runs/{run_id}/events")
-def list_events(run_id: str) -> list[dict[str, str]]:
+def list_events(run_id: str) -> list[dict[str, Any]]:
+    _get_run(run_id)
+    with session_scope(_session_factory) as session:
+        records = (
+            session.query(RunEventRecord)
+            .filter(RunEventRecord.run_id == run_id)
+            .order_by(RunEventRecord.id.asc())
+            .all()
+        )
+        if records:
+            return [_event_record_to_response(record) for record in records]
     return _get_run(run_id).events
 
 
@@ -290,10 +302,12 @@ def _build_voice_intent_parser() -> VoiceIntentParser:
     )
 
 
-def _append_event(run: RunState, kind: str, message: str) -> None:
+def _append_event(run: RunState, kind: str, message: str | dict[str, Any]) -> None:
     run.updated_at = _utc_now()
-    run.events.append({"kind": kind, "message": message})
+    event = {"kind": kind, **message} if isinstance(message, dict) else {"kind": kind, "message": message}
+    run.events.append(event)
     _persist_run(run)
+    _persist_event(run.run_id, kind, event)
 
 
 def _persist_run(run: RunState) -> None:
@@ -307,6 +321,34 @@ def _persist_run(run: RunState) -> None:
         record.final_text = run.final_text
         record.created_at = _parse_datetime(run.created_at)
         record.updated_at = _parse_datetime(run.updated_at)
+
+
+def _persist_event(run_id: str, kind: str, event: dict[str, Any]) -> None:
+    payload = {key: value for key, value in event.items() if key != "kind"}
+    with session_scope(_session_factory) as session:
+        if session.get(RunRecord, run_id) is None:
+            return
+        session.add(
+            RunEventRecord(
+                run_id=run_id,
+                kind=kind,
+                payload_json=json.dumps(payload, default=str),
+            )
+        )
+
+
+def _event_record_to_response(record: RunEventRecord) -> dict[str, Any]:
+    try:
+        payload = json.loads(record.payload_json)
+    except json.JSONDecodeError:
+        payload = {"message": record.payload_json}
+    return normalize_event_payload(
+        kind=record.kind,
+        payload=payload,
+        event_id=record.id,
+        run_id=record.run_id,
+        created_at=_format_datetime(record.created_at),
+    )
 
 
 def _history_item_from_run(run: RunState) -> RunHistoryItem:
@@ -455,7 +497,7 @@ def _build_agent(run: RunState) -> AgentCore:
         cost_budget_usd=settings.app_cost_budget_usd,
         input_usd_per_mtok=settings.deepseek_input_usd_per_mtok,
         output_usd_per_mtok=settings.deepseek_output_usd_per_mtok,
-        on_event=lambda kind, message: _append_event(run, kind, message),
+        on_event=lambda kind, payload: _append_event(run, kind, payload),
     )
 
 

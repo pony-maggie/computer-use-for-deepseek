@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Run } from "../types";
+import { ApprovalPreview } from "./ApprovalPreview";
 import { getRunControlState, type RunAction } from "./runControlState";
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
   status: string;
   run: Run | null;
   pendingAction: RunAction | null;
+  error?: string | null;
   onStart: () => Promise<void>;
   onPause: () => Promise<void>;
   onResume: () => Promise<void>;
@@ -29,6 +31,7 @@ export function RunControls({
   status,
   run,
   pendingAction,
+  error,
   onStart,
   onPause,
   onResume,
@@ -69,6 +72,7 @@ export function RunControls({
           <p>{run.task}</p>
         </div>
       ) : null}
+      {error ? <div className="error-text run-action-error">{error}</div> : null}
       <button disabled={!controls.canStart} onClick={() => void onStart()}>
         {pendingAction === "start" ? "Starting..." : "Start Run"}
       </button>
@@ -82,22 +86,16 @@ export function RunControls({
         {pendingAction === "cancel" ? "Canceling..." : "Cancel"}
       </button>
       {run?.pending_confirmation_summary ? (
-        <div className="confirmation-panel">
-          <span className="eyebrow">Approval Required</span>
-          <strong>{run.pending_confirmation_summary}</strong>
-          <details className="confirmation-details">
-            <summary>Details</summary>
-            <pre>{JSON.stringify(run.pending_confirmation, null, 2)}</pre>
-          </details>
-          <div className="confirmation-actions">
-            <button disabled={!controls.canApprove} onClick={() => void onApprove()}>
-              {pendingAction === "approve" ? "Approving..." : "Approve"}
-            </button>
-            <button disabled={!controls.canReject} onClick={() => void onReject()}>
-              {pendingAction === "reject" ? "Rejecting..." : "Reject"}
-            </button>
-          </div>
-        </div>
+        <ApprovalPreview
+          summary={run.pending_confirmation_summary}
+          payload={run.pending_confirmation}
+          canApprove={controls.canApprove}
+          canReject={controls.canReject}
+          approving={pendingAction === "approve"}
+          rejecting={pendingAction === "reject"}
+          onApprove={() => void onApprove()}
+          onReject={() => void onReject()}
+        />
       ) : null}
     </section>
   );

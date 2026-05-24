@@ -258,6 +258,84 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - Added regression coverage for Chinese browser locale detection in the voice input hook.
 - Verified with `cd web && npm test` and `cd web && npm run build` after the change.
 
+## 2026-05-24 Visual Run Inspector Planning
+
+- Reviewed local references saved under `~/Documents/temp`, including Gemini 2.5 Computer Use screenshots and saved Computer Use / Browser Use articles.
+- Reviewed `nexu-io/open-design` as a product interaction reference, especially structured question forms, live task/tool streams, sandboxed previews, artifact-first output, and checklist-style review.
+- Proposed the next feature as `Visual run inspector and action preview`.
+- Drafted the design spec at `docs/superpowers/specs/2026-05-24-visual-run-inspector-design.md`.
+- Added `feat-023` to `feature_list.json` with status `planned`.
+- User approved the design direction.
+- Drafted the implementation plan at `docs/superpowers/plans/2026-05-24-visual-run-inspector.md`.
+- Implemented structured backend run events, stable event API serialization, frontend event view helpers, `ComputerOverlay`, `RunInspector`, `ApprovalPreview`, and completion report metrics.
+- Updated `feat-023` to `done`.
+- 2026-05-24: `cd server && . .venv/bin/activate && pytest -v` passed with 68 tests.
+- 2026-05-24: `cd web && npm test` passed with 52 tests.
+- 2026-05-24: `cd web && npm run build` passed.
+- Manual Docker/browser smoke was not run in this step; automated backend/frontend verification passed.
+
+## 2026-05-24 Integrated Workflow Surfaces
+
+- Implemented the remaining planned workflow surfaces in one pass:
+  - `ReferenceContextPanel` reads local reference files and appends summaries to new run tasks.
+  - `TaskTemplatesPanel` provides structured prompts for research, web QA, data extraction, and form filling.
+  - `ArtifactCenter` shows final text, workspace files, and recent screenshot artifacts.
+  - `ReplayEvaluationPanel` lets users replay a historical task and locally mark benchmark runs.
+- `ChatPanel` now accepts task drafts from templates and replay.
+- `App` now appends reference context to created runs while preserving the existing create/start/pause/resume/cancel flow.
+- Added `feat-024` to `feature_list.json` with status `done`.
+- 2026-05-24: `cd web && npm run build` passed.
+- 2026-05-24: `cd web && npm test` passed with 52 tests.
+- 2026-05-24: `cd server && . .venv/bin/activate && pytest -v` passed with 68 tests.
+- 2026-05-24: `./init.sh` passed.
+- 2026-05-24: `python3 -m json.tool feature_list.json` passed.
+- Manual Docker/browser smoke was not run; automated backend/frontend verification passed.
+
+## 2026-05-24 Browser E2E Verification
+
+- Ran the local app with the backend in mock mode and opened `http://127.0.0.1:3000/` in a real browser.
+- Verified the integrated UI flow:
+  - template selection fills the task draft;
+  - local reference upload reads a saved HTML reference and appends a `Reference Context` block to newly created runs;
+  - workspace upload stores `uploads/f.txt` and surfaces it in the artifact center;
+  - replay fills the task input from historical runs without duplicating reference context;
+  - benchmark marking persists locally in the replay/evaluation panel;
+  - start run completes in mock mode and populates the audit trail, final artifact text, run report, noVNC iframe, and history list.
+- Fixed two E2E findings:
+  - replaying the same draft text did not update the task input; `ChatPanel` now receives a `taskDraftRevision` so repeated replay/template actions are applied.
+  - `Run Report` showed screenshot cache hits under `Cache hits`; it now shows `prompt_cache_hit_tokens`, matching the top run usage summary.
+- Verification completed:
+  - `cd web && npm test -- ChatPanel.test.tsx`
+  - `cd web && npm test -- RunInspector.test.tsx`
+  - `cd web && npm run build`
+  - Browser reload and manual interaction confirmed `Cache hits` displays `768` for `run_07af8a490b924bae9b8a32c63f5e31f5`.
+- Remaining note: browser console shows no React application errors after reload; noVNC still logs its own missing `package.json` 404, which does not block the main product flow.
+
+## 2026-05-24 Advanced Control Suite
+
+- Added design and plan documents:
+  - `docs/superpowers/specs/2026-05-24-advanced-control-suite-design.md`
+  - `docs/superpowers/plans/2026-05-24-advanced-control-suite.md`
+- Implemented the product-layer version of the remaining reference-inspired features:
+  - browser/computer/hybrid mode selection;
+  - per-run action policy and approval rules;
+  - scenario packs for research, form fill, web QA, product monitoring, and content operations;
+  - workflow recorder notes;
+  - viewport presets for desktop, tablet, and mobile;
+  - execution profile injection into newly created run tasks;
+  - live context loop, URL/DOM inspector, approval queue, self-healing strategy, and recent context panel;
+  - benchmark lab summary in replay/evaluation.
+- Fixed browser E2E findings:
+  - Start Run failures now refresh run/events/history, select the latest error event, and display the API error in run controls instead of producing an uncaught promise.
+  - Run Report now counts `kind: "error"` events.
+  - History now shows the latest 12 runs with an explicit count instead of rendering an oversized sidebar list.
+- Updated `feat-025` to `done`.
+- Verification completed:
+  - `cd web && npm run build`
+  - `cd web && npm test`
+  - Browser E2E on `http://127.0.0.1:3000/` confirmed scenario packs, mode switching, viewport lab, approval rules, workflow notes, Execution Profile injection, replay cleanup, failure-state error display, error event selection, and error count reporting.
+- Browser E2E note: noVNC iframe loaded but reported that the VNC server was not connected in this mock-only run; this does not block the advanced control UI flow.
+
 ## 2026-05-22 Voice Natural Language Actions
 
 - Added a backend `/api/voice/interpret` endpoint that uses DeepSeek to convert natural speech transcripts into structured task text and a fixed set of UI actions.

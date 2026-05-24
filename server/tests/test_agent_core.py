@@ -251,23 +251,32 @@ async def test_agent_omits_duplicate_screenshot_base64_by_hash() -> None:
 
 @pytest.mark.asyncio
 async def test_agent_emits_progress_events_during_model_and_tool_steps() -> None:
-    events: list[tuple[str, str]] = []
+    events: list[dict] = []
     agent = AgentCore(
         model=FakeModel(),
         runtime=MockRuntime(),
         safety=SafetyPolicy(display_width=1280, display_height=800),
         max_steps=5,
-        on_event=lambda kind, message: events.append((kind, message)),
+        on_event=lambda kind, payload: events.append({"kind": kind, **payload}),
     )
 
     result = await agent.run("take a screenshot")
 
     assert result.status == "completed"
-    assert ("model", "Step 1: waiting for model response") in events
-    assert ("model", "Step 1: model requested 1 tool call") in events
-    assert ("tool", "Step 1: executing computer: screenshot") in events
-    assert ("tool", "Step 1: completed computer: screenshot") in events
-    assert ("model", "Step 2: waiting for model response") in events
+    assert any(
+        event["kind"] == "model"
+        and event["message"] == "Step 1: waiting for model response"
+        and event["status"] == "running"
+        and event["step"] == 1
+        for event in events
+    )
+    assert any(
+        event["kind"] == "tool"
+        and event["action_name"] == "screenshot"
+        and event["tool_name"] == "computer"
+        for event in events
+    )
+    assert any(event["kind"] == "result" and event["status"] == "completed" for event in events)
 
 
 @pytest.mark.asyncio
@@ -304,3 +313,25 @@ async def test_agent_can_continue_after_confirmed_tool_call() -> None:
     assert completed.final_text == "approved"
     assert runtime.actions[0].bash is not None
     assert any(message["role"] == "tool" for message in model.messages_after_approval)
+
+
+@pytest.mark.asyncio
+async def test_agent_emits_structured_confirmation_event() -> None:
+    events: list[dict] = []
+    agent = AgentCore(
+        model=ConfirmingModel(),
+        runtime=RecordingRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+        on_event=lambda kind, payload: events.append({"kind": kind, **payload}),
+    )
+
+    waiting = await agent.run("run a shell command")
+
+    assert waiting.status == "waiting_for_confirmation"
+    confirmation_event = next(event for event in events if event["kind"] == "confirmation")
+    assert confirmation_event["status"] == "waiting"
+    assert confirmation_event["step"] == 1
+    assert confirmation_event["tool_name"] == "bash"
+    assert confirmation_event["action_name"] == "shell"
+    assert confirmation_event["action_payload"]["command"] == "printf approved"

@@ -1,9 +1,11 @@
 from fastapi.testclient import TestClient
 
-from deepseek_computer_use.api.routes import RunState, runs
+from deepseek_computer_use.api.routes import RunState, _session_factory, runs
 from deepseek_computer_use.agent.events import AgentRunResult
 from deepseek_computer_use.main import create_app
 from deepseek_computer_use.models.protocol import BashAction, ToolCall
+from deepseek_computer_use.persistence.database import session_scope
+from deepseek_computer_use.persistence.repositories import RunRepository
 from deepseek_computer_use.voice.parser import VoiceInterpretation
 
 
@@ -261,5 +263,72 @@ def test_run_events_are_auditable() -> None:
     response = client.get(f"/api/runs/{run_id}/events")
 
     assert response.status_code == 200
-    assert {"kind": "created", "message": "Run created"} in response.json()
-    assert {"kind": "status", "message": "Run paused"} in response.json()
+    assert any(event["kind"] == "created" and event["message"] == "Run created" for event in response.json())
+    assert any(event["kind"] == "status" and event["message"] == "Run paused" for event in response.json())
+
+
+def test_list_events_returns_structured_payload() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "open example.com"}).json()
+    run_id = created["run_id"]
+    _append_test_event(
+        run_id,
+        "tool",
+        {
+            "message": "Step 1: executing computer: left_click",
+            "status": "running",
+            "step": 1,
+            "tool_name": "computer",
+            "action_name": "left_click",
+            "action_payload": {"action": "left_click", "coordinate": [320, 240]},
+            "display": {"width": 1280, "height": 800, "scale": 1.0},
+        },
+    )
+
+    response = client.get(f"/api/runs/{run_id}/events")
+
+    assert response.status_code == 200
+    events = response.json()
+    structured = [event for event in events if event["kind"] == "tool"][-1]
+    assert structured["message"] == "Step 1: executing computer: left_click"
+    assert structured["status"] == "running"
+    assert structured["step"] == 1
+    assert structured["tool_name"] == "computer"
+    assert structured["action_name"] == "left_click"
+    assert structured["action_payload"]["coordinate"] == [320, 240]
+    assert structured["display"]["width"] == 1280
+
+
+def test_list_events_preserves_legacy_payloads() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "open example.com"}).json()
+    run_id = created["run_id"]
+    _append_test_event(run_id, "system", {"message": "legacy event"})
+
+    response = client.get(f"/api/runs/{run_id}/events")
+
+    assert response.status_code == 200
+    legacy = [event for event in response.json() if event["message"] == "legacy event"][0]
+    assert legacy["kind"] == "system"
+    assert legacy["status"] == "completed"
+    assert legacy["tool_name"] is None
+
+
+def test_list_events_returns_stable_sequence_order() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "open example.com"}).json()
+    run_id = created["run_id"]
+    _append_test_event(run_id, "system", {"message": "first"})
+    _append_test_event(run_id, "system", {"message": "second"})
+    _append_test_event(run_id, "system", {"message": "third"})
+
+    response = client.get(f"/api/runs/{run_id}/events")
+
+    assert response.status_code == 200
+    tail = response.json()[-3:]
+    assert [event["sequence"] for event in tail] == sorted(event["sequence"] for event in tail)
+
+
+def _append_test_event(run_id: str, kind: str, payload: dict[str, object]) -> None:
+    with session_scope(_session_factory) as session:
+        RunRepository(session).append_event(run_id, kind, payload)

@@ -177,6 +177,30 @@
       "status": "done",
       "dependencies": ["feat-012"],
       "evidence": "RunControls displays current task text. Backend exposes GET /api/runs and persists run summaries to SQLite. Web sidebar renders selectable run history. Targeted backend/frontend tests passed."
+    },
+    {
+      "id": "feat-023",
+      "name": "Visual run inspector and action preview",
+      "description": "Redesign the run experience around a structured step timeline, screenshot thumbnails, action overlays, approval previews, and completion reports so users can supervise the computer-use loop.",
+      "status": "done",
+      "dependencies": ["feat-018", "feat-022"],
+      "evidence": "Structured backend run events, frontend RunInspector, ComputerOverlay, ApprovalPreview, and run report implemented. Backend pytest passed with 68 tests. Frontend vitest passed with 52 tests. Frontend build passed. ./init.sh and feature_list JSON validation passed. Browser E2E on 2026-05-24 confirmed audit trail, final artifact text, and corrected prompt cache hit reporting."
+    },
+    {
+      "id": "feat-024",
+      "name": "Reference context, templates, artifacts, and replay",
+      "description": "Add the remaining planned workflow surfaces in one integrated pass: local reference context injection, task templates, artifact center, and replay/evaluation controls.",
+      "status": "done",
+      "dependencies": ["feat-023"],
+      "evidence": "ReferenceContextPanel, TaskTemplatesPanel, ArtifactCenter, and ReplayEvaluationPanel implemented. Frontend build passed. Frontend vitest passed with 52 tests. Backend pytest passed with 68 tests. ./init.sh and feature_list JSON validation passed. Browser E2E on 2026-05-24 confirmed template fill, local reference ingestion, workspace upload/artifacts, replay, benchmark marking, mock run completion, and noVNC visibility."
+    },
+    {
+      "id": "feat-025",
+      "name": "Advanced control suite",
+      "description": "Add browser/computer/hybrid mode selection, action policy controls, live context loop, URL/DOM inspector, task recorder, scenario packs, approval queue, self-healing strategy, benchmark lab, and viewport lab as a cohesive product layer.",
+      "status": "done",
+      "dependencies": ["feat-023", "feat-024"],
+      "evidence": "AdvancedControlSuite, AgentOperationsPanel, execution profile injection, benchmark lab upgrade, design spec, and implementation plan added. Web build passed. Web vitest passed with 52 tests. Browser E2E confirmed scenario packs, mode switching, viewport lab, approval rules, workflow notes, Execution Profile injection, replay cleanup, failure-state error display, error event selection, and error count reporting."
     }
   ]
 }

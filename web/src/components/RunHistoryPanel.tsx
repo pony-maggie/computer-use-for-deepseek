@@ -7,32 +7,39 @@ type Props = {
 };
 
 export function RunHistoryPanel({ history, activeRunId, onSelectRun }: Props) {
+  const visibleHistory = history.slice(0, 12);
+
   return (
     <section className="panel history-panel">
       <div className="panel-header">History</div>
       {history.length === 0 ? (
         <div className="status-text">No previous runs yet.</div>
       ) : (
-        <ol className="history-list">
-          {history.map((item) => (
-            <li key={item.run_id}>
-              <button
-                type="button"
-                className={item.run_id === activeRunId ? "history-item active" : "history-item"}
-                aria-label={`Open ${item.run_id}`}
-                onClick={() => onSelectRun(item.run_id)}
-              >
-                <span className="history-row">
-                  <strong>{item.run_id}</strong>
-                  <span>{item.status}</span>
-                </span>
-                <span className="history-task">{item.task}</span>
-                <span className="history-time">{formatRunTime(item.updated_at)}</span>
-                {item.final_text ? <span className="history-result">{item.final_text}</span> : null}
-              </button>
-            </li>
-          ))}
-        </ol>
+        <>
+          <div className="status-text">
+            Showing latest {visibleHistory.length} of {history.length} runs.
+          </div>
+          <ol className="history-list">
+            {visibleHistory.map((item) => (
+              <li key={item.run_id}>
+                <button
+                  type="button"
+                  className={item.run_id === activeRunId ? "history-item active" : "history-item"}
+                  aria-label={`Open ${item.run_id}`}
+                  onClick={() => onSelectRun(item.run_id)}
+                >
+                  <span className="history-row">
+                    <strong>{item.run_id}</strong>
+                    <span>{item.status}</span>
+                  </span>
+                  <span className="history-task">{item.task}</span>
+                  <span className="history-time">{formatRunTime(item.updated_at)}</span>
+                  {item.final_text ? <span className="history-result">{item.final_text}</span> : null}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </>
       )}
     </section>
   );

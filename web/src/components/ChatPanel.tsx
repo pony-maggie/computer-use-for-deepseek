@@ -1,5 +1,5 @@
 import { Mic } from "lucide-react";
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { interpretVoice } from "../api";
 import type { VoiceInterpretation } from "../api";
 import type { RunAction } from "./runControlState";
@@ -19,6 +19,8 @@ type Props = {
   apiReady: boolean;
   runStatus: string;
   hasPendingConfirmation: boolean;
+  taskDraft?: string;
+  taskDraftRevision?: number;
 };
 
 const voiceModeStorageKey = "computer-use-voice-mode";
@@ -90,6 +92,8 @@ export function ChatPanel({
   apiReady,
   runStatus,
   hasPendingConfirmation,
+  taskDraft,
+  taskDraftRevision,
 }: Props) {
   const [task, setTask] = useState("");
   const [busy, setBusy] = useState(false);
@@ -105,6 +109,10 @@ export function ChatPanel({
       ),
     ),
   );
+
+  useEffect(() => {
+    if (taskDraft !== undefined) setTask(taskDraft);
+  }, [taskDraft, taskDraftRevision]);
 
   const speak = useCallback(
     (message: string) => {
