@@ -213,6 +213,8 @@ class SafetyPolicy:
         )
 
     def _is_low_risk_workspace_read_segment(self, segment: list[str]) -> bool:
+        if any(self._is_unsafe_redirection_token(part) for part in segment):
+            return False
         segment = [part for part in segment if part != "2>/dev/null"]
         if not segment:
             return True
@@ -233,6 +235,11 @@ class SafetyPolicy:
         if command == "find":
             return self._is_workspace_find_segment(args)
         return False
+
+    def _is_unsafe_redirection_token(self, token: str) -> bool:
+        if token == "2>/dev/null":
+            return False
+        return ">" in token or "<" in token
 
     def _is_workspace_find_segment(self, args: list[str]) -> bool:
         if len(args) < 3 or args[0] not in {"/", "/workspace", "/workspace/"}:

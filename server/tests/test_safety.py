@@ -219,6 +219,20 @@ def test_workspace_file_read_shell_command_is_allowed() -> None:
     assert decision == SafetyDecision.ALLOW
 
 
+def test_echo_redirection_requires_confirmation() -> None:
+    policy = SafetyPolicy(display_width=1280, display_height=800)
+
+    decision = policy.evaluate(
+        ToolCall(
+            tool_call_id="call_1",
+            name="bash",
+            bash=BashAction(command='echo -n "hello acceptance" > /workspace/hello.txt'),
+        )
+    )
+
+    assert decision == SafetyDecision.CONFIRM
+
+
 def test_workspace_file_discovery_with_glob_and_maxdepth_is_allowed() -> None:
     policy = SafetyPolicy(display_width=1280, display_height=800)
 

@@ -104,6 +104,15 @@ This file is the project memory for future agent sessions. Update it whenever sc
 
 ## Latest Verification
 
+- 2026-05-24: `./start.sh` pulled latest GHCR server/web/runtime images after GitHub Actions run `26358293933` succeeded.
+- 2026-05-24: Local acceptance smoke on latest images passed for `docker compose ps`, `./scripts/smoke-runtime.sh`, health endpoint, noVNC HTTP, multilingual UI switching, templates, scenario packs, workflow notes, viewport lab, reference upload, run creation/start/completion, run report, artifacts, replay, benchmark marking, API run creation, runtime screenshot, and runtime browser_snapshot.
+- 2026-05-24: Local acceptance found safety gap: `echo -n "hello acceptance" > /workspace/hello.txt` was treated as low-risk bash. Added failing safety test and fixed `SafetyPolicy` to reject unsafe shell redirection tokens in low-risk read commands.
+- 2026-05-24: `cd server && . .venv/bin/activate && pytest tests/test_safety.py::test_echo_redirection_requires_confirmation -v` passed after safety fix.
+- 2026-05-24: `cd server && . .venv/bin/activate && pytest tests/test_safety.py -v` passed with 17 tests after safety fix.
+- 2026-05-24: `cd server && . .venv/bin/activate && pytest -v` passed with 69 tests after safety fix.
+- 2026-05-24: `cd web && npm test` passed with 53 tests after safety fix.
+- 2026-05-24: `cd web && npm run build` passed after safety fix.
+- 2026-05-24: `python3 -m json.tool feature_list.json >/dev/null && ./init.sh` passed after safety fix.
 - 2026-05-24: `cd web && npm test -- i18n.test.tsx ChatPanel.test.tsx ApprovalPreview.test.tsx RunControls.test.tsx RunHistoryPanel.test.tsx RunInspector.test.tsx` passed with 18 tests.
 - 2026-05-24: `cd web && npm run build` passed after bilingual UI changes.
 - 2026-05-24: Browser E2E on `http://localhost:5173/` confirmed Chinese default UI, English switch, `document.documentElement.lang === "en-US"` after switching, voice hint follows interface language, and no `Voice language` / `语音语言` selector text remains.

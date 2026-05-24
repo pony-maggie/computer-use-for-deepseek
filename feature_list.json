@@ -209,6 +209,14 @@
       "status": "done",
       "dependencies": ["feat-021", "feat-025"],
       "evidence": "Frontend i18n provider, language switcher, localized panels, localized templates/scenarios, and voice-language alignment implemented. Targeted i18n/voice/UI tests passed with 18 tests. Full web vitest passed with 53 tests. Web production build passed. Browser E2E on 2026-05-24 confirmed Chinese and English UI switching, document lang updates to en-US, and no remaining Voice language/语音语言 selector text."
+    },
+    {
+      "id": "feat-027",
+      "name": "Local acceptance safety hardening",
+      "description": "Update local acceptance coverage for the current product surface and harden bash safety so shell redirection writes require approval.",
+      "status": "done",
+      "dependencies": ["feat-025", "feat-026"],
+      "evidence": "docs/local-acceptance.md updated for multilingual UI, advanced controls, run inspector, artifacts, history, replay, and safety approval flows. Browser E2E on 2026-05-24 found echo redirection writes were incorrectly allowed. Added a failing safety test for echo redirection, fixed SafetyPolicy redirection handling, and verified the targeted test and full safety test file passed."
     }
   ]
 }
