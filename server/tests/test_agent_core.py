@@ -134,6 +134,75 @@ class StableScreenshotRuntime:
         )
 
 
+class ChangingScreenshotRuntime:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def execute(self, tool_call: ToolCall) -> ToolResult:
+        self.calls += 1
+        return ToolResult(
+            output=f"executed screenshot {self.calls}",
+            base64_image=f"aW1hZ2Ut{self.calls}",
+            image_hash=f"sha256:image-{self.calls}",
+            system="display=1280x800",
+        )
+
+
+class LargeOutputModel:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.tool_messages: list[dict[str, str]] = []
+
+    def complete(self, messages):
+        self.calls += 1
+        self.tool_messages = [message for message in messages if message["role"] == "tool"]
+        if self.calls == 1:
+            return type(
+                "Parsed",
+                (),
+                {
+                    "assistant_message": {"role": "assistant", "content": ""},
+                    "final_text": None,
+                    "tool_calls": [
+                        ToolCall(
+                            tool_call_id="call_1",
+                            name="computer",
+                            computer=ComputerAction(action="browser_snapshot"),
+                        )
+                    ],
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "prompt_cache_hit_tokens": 0,
+                    "prompt_cache_miss_tokens": 10,
+                },
+            )()
+        return type(
+            "Parsed",
+            (),
+            {
+                "assistant_message": {"role": "assistant", "content": "done"},
+                "final_text": "done",
+                "tool_calls": [],
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 10,
+            },
+        )()
+
+    def tool_result_message(self, tool_call_id: str, content: str | ToolResult):
+        if isinstance(content, ToolResult):
+            content = content.model_dump_json(exclude_none=True)
+        return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
+
+
+class LargeOutputRuntime:
+    async def execute(self, tool_call: ToolCall) -> ToolResult:
+        return ToolResult(output="x" * 50_000)
+
+
 class ConfirmingModel:
     def __init__(self) -> None:
         self.calls = 0
@@ -258,6 +327,46 @@ async def test_agent_omits_duplicate_screenshot_base64_by_hash() -> None:
     assert second_tool_result["image_hash"] == "sha256:same"
     assert second_tool_result["perception_cache_hit"] is True
     assert "base64_image" not in second_tool_result
+
+
+@pytest.mark.asyncio
+async def test_agent_omits_new_screenshots_after_first_image_budget() -> None:
+    model = RepeatScreenshotModel()
+    agent = AgentCore(
+        model=model,
+        runtime=ChangingScreenshotRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+    )
+
+    result = await agent.run("take changing screenshots")
+
+    assert result.status == "completed"
+    first_tool_result = json.loads(model.tool_messages[0]["content"])
+    second_tool_result = json.loads(model.tool_messages[1]["content"])
+    assert first_tool_result["base64_image"] == "aW1hZ2Ut1"
+    assert second_tool_result["image_hash"] == "sha256:image-2"
+    assert second_tool_result["perception_cache_hit"] is True
+    assert "base64_image" not in second_tool_result
+    assert "screenshot omitted after first image" in second_tool_result["system"]
+
+
+@pytest.mark.asyncio
+async def test_agent_truncates_large_tool_output_before_model_context() -> None:
+    model = LargeOutputModel()
+    agent = AgentCore(
+        model=model,
+        runtime=LargeOutputRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+    )
+
+    result = await agent.run("inspect a very large page")
+
+    assert result.status == "completed"
+    tool_result = json.loads(model.tool_messages[0]["content"])
+    assert len(tool_result["output"]) < 13_000
+    assert "tool output truncated from 50000 chars" in tool_result["output"]
 
 
 @pytest.mark.asyncio

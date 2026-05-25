@@ -269,6 +269,78 @@ def test_workspace_file_view_is_allowed() -> None:
     assert decision == SafetyDecision.ALLOW
 
 
+def test_text_editor_create_outputs_file_is_allowed() -> None:
+    policy = SafetyPolicy(display_width=1280, display_height=800)
+
+    decision = policy.evaluate(
+        ToolCall(
+            tool_call_id="call_1",
+            name="text_editor",
+            text_editor=TextEditorAction(
+                command="create",
+                path="outputs/example1_report.txt",
+                file_text="Summary\n",
+            ),
+        )
+    )
+
+    assert decision == SafetyDecision.ALLOW
+
+
+def test_text_editor_create_run_scoped_outputs_file_is_allowed() -> None:
+    policy = SafetyPolicy(display_width=1280, display_height=800)
+
+    decision = policy.evaluate(
+        ToolCall(
+            tool_call_id="call_1",
+            name="text_editor",
+            text_editor=TextEditorAction(
+                command="create",
+                path="/workspace/run_123/outputs/example1_report.txt",
+                file_text="Summary\n",
+            ),
+        )
+    )
+
+    assert decision == SafetyDecision.ALLOW
+
+
+def test_text_editor_create_workspace_root_requires_confirmation() -> None:
+    policy = SafetyPolicy(display_width=1280, display_height=800)
+
+    decision = policy.evaluate(
+        ToolCall(
+            tool_call_id="call_1",
+            name="text_editor",
+            text_editor=TextEditorAction(
+                command="create",
+                path="/workspace/report.txt",
+                file_text="Summary\n",
+            ),
+        )
+    )
+
+    assert decision == SafetyDecision.CONFIRM
+
+
+def test_text_editor_create_outputs_path_escape_requires_confirmation() -> None:
+    policy = SafetyPolicy(display_width=1280, display_height=800)
+
+    decision = policy.evaluate(
+        ToolCall(
+            tool_call_id="call_1",
+            name="text_editor",
+            text_editor=TextEditorAction(
+                command="create",
+                path="outputs/../uploads/input.md",
+                file_text="Summary\n",
+            ),
+        )
+    )
+
+    assert decision == SafetyDecision.CONFIRM
+
+
 def test_workspace_file_edit_requires_confirmation() -> None:
     policy = SafetyPolicy(display_width=1280, display_height=800)
 

@@ -1,7 +1,7 @@
 from enum import Enum
 import shlex
 
-from deepseek_computer_use.models.protocol import ActionName, ToolCall
+from deepseek_computer_use.models.protocol import ActionName, TextEditorCommand, ToolCall
 
 
 class SafetyDecision(Enum):
@@ -24,6 +24,11 @@ class SafetyPolicy:
             return SafetyDecision.CONFIRM
         if tool_call.text_editor is not None:
             if self._is_low_risk_file_view(
+                command=tool_call.text_editor.command,
+                path=tool_call.text_editor.path,
+            ):
+                return SafetyDecision.ALLOW
+            if self._is_low_risk_output_create(
                 command=tool_call.text_editor.command,
                 path=tool_call.text_editor.path,
             ):
@@ -287,6 +292,24 @@ class SafetyPolicy:
         if ".." in parts:
             return False
         return not normalized_path.startswith("/") or normalized_path.startswith("/workspace/")
+
+    def _is_low_risk_output_create(self, *, command: str, path: str) -> bool:
+        if command != TextEditorCommand.create:
+            return False
+        normalized_path = path.strip().replace("\\", "/")
+        if not normalized_path or "\x00" in normalized_path:
+            return False
+        parts = [part for part in normalized_path.split("/") if part not in {"", "."}]
+        if ".." in parts:
+            return False
+        if normalized_path.startswith("/"):
+            return (
+                len(parts) >= 4
+                and parts[0] == "workspace"
+                and parts[1] != ""
+                and parts[2] == "outputs"
+            )
+        return len(parts) >= 2 and parts[0] == "outputs"
 
     def _is_browser_package_discovery(self, normalized: str) -> bool:
         allowed = {

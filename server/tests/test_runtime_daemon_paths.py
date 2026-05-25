@@ -146,3 +146,22 @@ def test_browser_snapshot_prefers_non_blank_browser_tab(monkeypatch) -> None:
     assert snapshot["title"] == "Example Domain"
     assert snapshot["url"] == "http://example.com/"
     assert run_calls[0][-1] == "http://example.com/"
+
+
+def test_text_editor_create_rejects_existing_file(tmp_path) -> None:
+    daemon = load_daemon_module()
+    daemon.WORKSPACE = tmp_path
+    existing = tmp_path / "run_123/outputs/report.txt"
+    existing.parent.mkdir(parents=True)
+    existing.write_text("old", encoding="utf-8")
+
+    result = daemon.handle_text_editor(
+        {
+            "command": "create",
+            "path": "run_123/outputs/report.txt",
+            "file_text": "new",
+        }
+    )
+
+    assert result == {"error": "file already exists: run_123/outputs/report.txt"}
+    assert existing.read_text(encoding="utf-8") == "old"

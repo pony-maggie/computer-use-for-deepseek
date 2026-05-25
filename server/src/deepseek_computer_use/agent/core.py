@@ -10,6 +10,8 @@ from deepseek_computer_use.safety.policy import SafetyDecision, SafetyPolicy
 
 
 ProgressCallback = Callable[[str, dict[str, Any]], None]
+MAX_MODEL_TOOL_OUTPUT_CHARS = 12_000
+MAX_INLINE_SCREENSHOTS_PER_RUN = 1
 
 
 class ModelAdapter(Protocol):
@@ -46,6 +48,7 @@ class AgentCore:
         self.memory_context = memory_context.strip()
         self.on_event = on_event
         self.seen_image_hashes: set[str] = set()
+        self.inline_screenshot_count = 0
 
     async def run(self, task: str) -> AgentRunResult:
         user_content = task
@@ -329,18 +332,44 @@ class AgentCore:
         return {"width": int(match.group(1)), "height": int(match.group(2)), "scale": 1.0}
 
     def _compact_tool_result(self, result: ToolResult) -> ToolResult:
-        if not result.image_hash or not result.base64_image:
-            return result
-        if result.image_hash not in self.seen_image_hashes:
-            self.seen_image_hashes.add(result.image_hash)
-            return result
+        compacted = self._compact_large_output(result)
+        if not compacted.image_hash or not compacted.base64_image:
+            return compacted
+        if compacted.image_hash in self.seen_image_hashes:
+            return self._omit_screenshot(
+                compacted,
+                f"unchanged screenshot omitted; image_hash={compacted.image_hash}",
+            )
 
+        self.seen_image_hashes.add(compacted.image_hash)
+        if self.inline_screenshot_count < MAX_INLINE_SCREENSHOTS_PER_RUN:
+            self.inline_screenshot_count += 1
+            return compacted
+        return self._omit_screenshot(
+            compacted,
+            f"screenshot omitted after first image; image_hash={compacted.image_hash}",
+        )
+
+    def _compact_large_output(self, result: ToolResult) -> ToolResult:
+        if result.output is None or len(result.output) <= MAX_MODEL_TOOL_OUTPUT_CHARS:
+            return result
+        original_length = len(result.output)
+        truncated_output = (
+            result.output[:MAX_MODEL_TOOL_OUTPUT_CHARS]
+            + "\n"
+            + (
+                f"[tool output truncated from {original_length} chars to "
+                f"{MAX_MODEL_TOOL_OUTPUT_CHARS} chars]"
+            )
+        )
+        return result.model_copy(update={"output": truncated_output})
+
+    def _omit_screenshot(self, result: ToolResult, note: str) -> ToolResult:
         system = result.system or ""
-        suffix = f"unchanged screenshot omitted; image_hash={result.image_hash}"
         return result.model_copy(
             update={
                 "base64_image": None,
                 "perception_cache_hit": True,
-                "system": f"{system}; {suffix}" if system else suffix,
+                "system": f"{system}; {note}" if system else note,
             }
         )

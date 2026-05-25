@@ -221,6 +221,27 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `python3 -m json.tool feature_list.json >/dev/null` passed.
   - `./scripts/smoke-runtime.sh` passed.
 
+## 2026-05-25 Scenario Reliability Hardening
+
+- Implemented `feat-033` based on the five realistic scenario tests:
+  - added prompt guidance requiring extraction/listing tasks to compare the final answer against observed source material before finishing;
+  - compacted large tool outputs before they are sent back into the model context;
+  - limited inline screenshot payloads to the first screenshot per run while preserving image hashes and metadata for later screenshots;
+  - allowed low-risk `text_editor create` calls only for new files under `outputs/` or run-scoped `/workspace/<run>/outputs/`;
+  - kept workspace-root writes, path escapes, and edits/replacements behind confirmation;
+  - made the runtime daemon reject `create` when the target file already exists.
+- Verification:
+  - Targeted failing tests were added first and failed before implementation.
+  - Targeted repaired tests passed with 10 tests.
+  - `cd server && . .venv/bin/activate && pytest -v` passed with 89 tests.
+  - `cd web && npm test` passed with 54 tests.
+  - `cd web && npm run build` passed.
+  - `docker compose config` passed.
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml config` passed.
+  - `python3 -m py_compile runtime/daemon.py` passed.
+  - `python3 -m json.tool feature_list.json >/dev/null` passed.
+  - `./init.sh` passed.
+
 ## 2026-05-17 Claude Demo Alignment Update
 
 - Compared the design against the Anthropic quickstart and the saved Zhihu field test.

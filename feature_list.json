@@ -338,6 +338,17 @@
         "feat-023"
       ],
       "evidence": "Backend-only invisible memory implemented with SQLite persistence, deterministic capture filters, hidden recall injection, API invisibility tests, and post-run capture. Full regression passed: server pytest 81 tests, web vitest 54 tests, web build, docker compose config, dev compose config, runtime daemon py_compile, runtime smoke, feature_list JSON validation, and ./init.sh."
+    },
+    {
+      "id": "feat-033",
+      "name": "Scenario reliability hardening",
+      "description": "Harden the agent loop and safety policy based on five realistic scenario tests: extraction completeness, screenshot/token budget control, and frictionless creation of new output files.",
+      "status": "done",
+      "dependencies": [
+        "feat-018",
+        "feat-032"
+      ],
+      "evidence": "Added regression tests for extraction completeness prompt guidance, post-first screenshot omission, large tool-output truncation, safe outputs/ file creation, path escape rejection, and runtime create no-overwrite behavior. Verification passed: server pytest 89 tests, web vitest 54 tests, web production build, docker compose config, dev compose config, runtime daemon py_compile, feature_list JSON validation, and ./init.sh."
     }
   ]
 }

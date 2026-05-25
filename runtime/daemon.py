@@ -217,6 +217,8 @@ def handle_text_editor(payload: dict) -> dict:
     if command == "view":
         return {"output": path.read_text(encoding="utf-8")}
     if command == "create":
+        if path.exists():
+            return {"error": f"file already exists: {path.relative_to(WORKSPACE)}"}
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(payload.get("file_text", ""), encoding="utf-8")
         return {"output": f"created {path.relative_to(WORKSPACE)}"}
