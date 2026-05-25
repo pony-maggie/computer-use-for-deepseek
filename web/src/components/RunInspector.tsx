@@ -19,7 +19,7 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
 
   return (
     <section className="panel run-inspector">
-      <div className="inspector-column">
+      <div className="inspector-column inspector-section">
         <div className="panel-header">{t("inspector.audit")}</div>
         <div className="step-timeline">
           {events.length === 0 ? (
@@ -59,7 +59,7 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
           })}
         </div>
       </div>
-      <div className="inspector-column">
+      <div className="inspector-column inspector-section">
         <div className="panel-header">{t("inspector.stepDetails")}</div>
         <div className="step-details">
           {selected ? (
@@ -69,7 +69,7 @@ export function RunInspector({ run, events, selectedEventId, onSelectEvent }: Pr
           )}
         </div>
       </div>
-      <div className="run-report">
+      <div className="run-report inspector-section">
         <div className="panel-header">{t("inspector.report")}</div>
         <dl>
           <dt>{t("inspector.steps")}</dt>

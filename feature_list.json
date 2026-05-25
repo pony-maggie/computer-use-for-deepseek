@@ -232,7 +232,7 @@
       "description": "Reduce the default interface to task setup, sandbox, and a tabbed run monitor while moving templates, references, settings, debug, replay, and evaluation behind explicit disclosure or tab controls.",
       "status": "done",
       "dependencies": ["feat-028"],
-      "evidence": "Left setup rail now collapses templates/references and run settings by default. Right inspector rail now uses Overview, Steps, Files, and Debug tabs so dense panels do not overlap. cd web && npm run build passed. Browser E2E at 1440x900 confirmed the simplified default view, Steps tab, and Debug tab render without overlap."
+      "evidence": "Left setup rail now collapses templates/references and run settings by default. Right inspector rail now uses Overview, Steps, Files, and Debug tabs. cd web && npm run build passed. Browser E2E at 1440x900 confirmed the simplified default view, Debug tab scrolling, and a completed run in Steps tab with separated Audit Trail, Step Details, and Run Report sections."
     }
   ]
 }

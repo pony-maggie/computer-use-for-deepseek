@@ -644,7 +644,7 @@ input[type="file"]:disabled::file-selector-button {
 .run-inspector {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 14px;
   overflow: visible;
 }
 
@@ -654,14 +654,26 @@ input[type="file"]:disabled::file-selector-button {
   overflow: visible;
 }
 
-.step-timeline {
-  max-height: 320px;
-  overflow: auto;
+.inspector-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.inspector-section .panel-header {
+  margin-bottom: 0;
 }
 
 .step-timeline {
+  max-height: 300px;
+  overflow: auto;
   display: grid;
   gap: 8px;
+  min-height: 0;
 }
 
 .step-card {
@@ -732,7 +744,7 @@ input[type="file"]:disabled::file-selector-button {
 
 .step-details pre {
   margin: 0;
-  max-height: 220px;
+  max-height: 260px;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -741,6 +753,11 @@ input[type="file"]:disabled::file-selector-button {
   border-radius: 6px;
   padding: 10px;
   font-size: 12px;
+}
+
+.step-details {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .run-report dl {
@@ -763,6 +780,8 @@ input[type="file"]:disabled::file-selector-button {
   margin-bottom: 0;
   color: #1d2430;
   overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
 }
 
 .artifact-center {
