@@ -450,3 +450,24 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - Verification completed:
   - `cd web && npm run build`
   - Browser E2E on `http://127.0.0.1:3000/` confirmed `模板与参考资料` expands first, clicking `运行设置` collapses it, and `运行设置` expands without overlapping the previous menu.
+
+
+## 2026-05-25 Viewport Lab Runtime Resize
+
+- Reframed Viewport Lab as a real runtime viewport control rather than a passive profile field.
+- Added concise design and implementation plan docs:
+  - `docs/superpowers/specs/2026-05-25-viewport-runtime-resize-design.md`
+  - `docs/superpowers/plans/2026-05-25-viewport-runtime-resize.md`
+- Added frontend `setSandboxViewport` API client and wired viewport changes from `ControlProfile` to `/api/sandbox/viewport`.
+- Added backend `POST /api/sandbox/viewport` with validated dimensions and runtime forwarding.
+- Added runtime `resize_viewport` support using best-effort Xvfb framebuffer resize plus Chromium window resize through `xdotool`.
+- Increased runtime virtual display capacity to `1440x1112` so all built-in presets can fit.
+- Updated the center sandbox stage with a viewport-aware frame and badge so Desktop, Tablet, and Mobile selections are visibly different.
+- Verification completed:
+  - `cd web && npm test -- api.test.ts`
+  - `cd server && . .venv/bin/activate && pytest tests/test_api_routes.py::test_set_sandbox_viewport_forwards_to_runtime tests/test_api_routes.py::test_set_sandbox_viewport_rejects_invalid_dimensions tests/test_runtime_daemon_paths.py::test_resize_viewport_updates_framebuffer_and_browser_window -v`
+  - `cd server && . .venv/bin/activate && pytest tests/test_api_routes.py tests/test_runtime_daemon_paths.py -v`
+  - `cd web && npm run build`
+  - `docker compose config`
+  - Browser E2E on `http://127.0.0.1:3001/` confirmed Mobile and Tablet update the center sandbox frame, badge text, `data-viewport`, and active viewport button state.
+- Runtime E2E note: local ports `3000` and `8000` were occupied by old Docker services, so browser validation used Vite on `3001`; true runtime endpoint verification should be repeated after Actions builds and `./start.sh` pulls the new images.

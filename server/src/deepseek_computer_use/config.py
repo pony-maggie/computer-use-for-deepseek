@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     deepseek_output_usd_per_mtok: float = 0.0
     app_runtime_mode: str = "docker"
     runtime_action_url: str = "http://runtime:7070"
-    runtime_display_width: int = 1280
-    runtime_display_height: int = 800
+    runtime_display_width: int = 1440
+    runtime_display_height: int = 1112
     runtime_novnc_url: str = "http://localhost:6080/vnc.html"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

@@ -65,6 +65,64 @@ def test_voice_interpret_endpoint(monkeypatch) -> None:
     assert response.json()["manual_confirmation_required"] is False
 
 
+def test_set_sandbox_viewport_forwards_to_runtime(monkeypatch) -> None:
+    client = TestClient(create_app())
+    forwarded: list[dict[str, object]] = []
+
+    def fake_post_runtime_tool_call(payload: dict[str, object]) -> dict[str, object]:
+        forwarded.append(payload)
+        return {"output": "resized viewport to 390x844", "system": "viewport=390x844"}
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._post_runtime_tool_call",
+        fake_post_runtime_tool_call,
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/sandbox/viewport",
+        json={"width": 390, "height": 844, "label": "Mobile 390x844"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "width": 390,
+        "height": 844,
+        "label": "Mobile 390x844",
+        "applied": True,
+    }
+    assert forwarded == [
+        {
+            "name": "computer",
+            "computer": {
+                "action": "resize_viewport",
+                "width": 390,
+                "height": 844,
+                "label": "Mobile 390x844",
+            },
+        }
+    ]
+
+
+def test_set_sandbox_viewport_rejects_invalid_dimensions(monkeypatch) -> None:
+    client = TestClient(create_app())
+    forwarded: list[dict[str, object]] = []
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._post_runtime_tool_call",
+        lambda payload: forwarded.append(payload),
+        raising=False,
+    )
+
+    response = client.post(
+        "/api/sandbox/viewport",
+        json={"width": 100, "height": 100, "label": "Tiny"},
+    )
+
+    assert response.status_code == 422
+    assert forwarded == []
+
+
 def test_get_run_endpoint_returns_current_run_state() -> None:
     client = TestClient(create_app())
     created = client.post("/api/runs", json={"task": "Take a screenshot"}).json()

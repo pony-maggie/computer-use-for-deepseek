@@ -317,6 +317,16 @@
         "feat-029"
       ],
       "evidence": "cd web && npm run build passed. docker compose config passed. Browser E2E at http://127.0.0.1:3000/ confirmed clicking 运行设置 expands the panel and shows 视口实验室. Runtime Dockerfile now installs fontconfig and fonts-noto-cjk; final Chinese rendering requires the rebuilt runtime image from CI to be pulled by start.sh. Follow-up fix: Task Assist and Run Settings now behave as an exclusive accordion with bounded internal disclosure scrolling to prevent left-rail menu overlap."
+    },
+    {
+      "id": "feat-031",
+      "name": "Viewport Lab runtime resize",
+      "description": "Make Viewport Lab visibly switch the sandbox preview and forward viewport changes to the runtime so Chromium is resized for desktop, tablet, and mobile task execution.",
+      "status": "done",
+      "dependencies": [
+        "feat-030"
+      ],
+      "evidence": "Added design and implementation plan docs. Frontend setSandboxViewport API test passed. Backend /api/sandbox/viewport forwarding and validation tests passed. Runtime resize_viewport daemon test passed. Related backend route/runtime tests passed with 23 tests. Web production build passed. docker compose config passed. Browser E2E on Vite port 3001 confirmed Mobile and Tablet selections update the center sandbox frame, badge, data viewport, and active button state. Full runtime browser verification requires the new backend/runtime images because local 3000/8000 were occupied by old Docker services."
     }
   ]
 }

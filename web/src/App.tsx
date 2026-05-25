@@ -10,6 +10,7 @@ import {
   pauseRun,
   rejectRun,
   resumeRun,
+  setSandboxViewport,
   startRun,
 } from "./api";
 import { ChatPanel } from "./components/ChatPanel";
@@ -27,6 +28,7 @@ import { WorkspacePanel } from "./components/WorkspacePanel";
 import {
   defaultControlProfile,
   formatExecutionProfile,
+  getViewportPreset,
   stripExecutionBlocks,
   type ControlProfile,
   type ScenarioPack,
@@ -58,6 +60,7 @@ export default function App() {
   const [inspectorTab, setInspectorTab] = useState<"overview" | "steps" | "files" | "debug">("overview");
   const [taskAssistOpen, setTaskAssistOpen] = useState(false);
   const [runSettingsOpen, setRunSettingsOpen] = useState(false);
+  const [viewportApplyState, setViewportApplyState] = useState<"idle" | "applying" | "applied" | "failed">("idle");
 
   useEffect(() => {
     let active = true;
@@ -126,6 +129,27 @@ export default function App() {
       window.clearInterval(interval);
     };
   }, [runId, status]);
+
+  useEffect(() => {
+    if (!apiReady) return;
+    let active = true;
+    const viewport = getViewportPreset(controlProfile.viewportId);
+    setViewportApplyState("applying");
+    void setSandboxViewport({
+      width: viewport.width,
+      height: viewport.height,
+      label: viewport.label,
+    })
+      .then(() => {
+        if (active) setViewportApplyState("applied");
+      })
+      .catch(() => {
+        if (active) setViewportApplyState("failed");
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiReady, controlProfile.viewportId]);
 
   async function onCreateRun(task: string) {
     const createdRun = await createRun(
@@ -218,6 +242,7 @@ export default function App() {
   }
 
   const activeEvent = selectedEvent ?? events[events.length - 1] ?? null;
+  const selectedViewport = getViewportPreset(controlProfile.viewportId);
 
   function selectTemplate(template: TaskTemplate) {
     updateTaskDraft(`${template.task}\n\n${taskScaffold(locale)}`);
@@ -301,8 +326,16 @@ export default function App() {
         </section>
       </aside>
 
-      <section className="sandbox-stage" aria-label="Sandbox computer stage">
-        <ComputerPanel overlay={createOverlayModel(activeEvent)} />
+      <section
+        className="sandbox-stage"
+        aria-label="Sandbox computer stage"
+        data-viewport={selectedViewport.id}
+      >
+        <ComputerPanel
+          overlay={createOverlayModel(activeEvent)}
+          viewport={selectedViewport}
+          viewportStatus={t(`sandbox.viewport${capitalizeState(viewportApplyState)}`)}
+        />
       </section>
 
       <aside className="inspector-rail" aria-label="Run inspector">
@@ -366,6 +399,10 @@ export default function App() {
       </aside>
     </main>
   );
+}
+
+function capitalizeState(state: "idle" | "applying" | "applied" | "failed") {
+  return `${state.charAt(0).toUpperCase()}${state.slice(1)}` as "Idle" | "Applying" | "Applied" | "Failed";
 }
 
 function buildTaskWithRunContext(

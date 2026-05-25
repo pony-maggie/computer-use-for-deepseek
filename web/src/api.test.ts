@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createRun, getApiHealth, interpretVoice, listRuns } from "./api";
+import { createRun, getApiHealth, interpretVoice, listRuns, setSandboxViewport } from "./api";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -71,5 +71,29 @@ describe("api client", () => {
       { cache: "no-store" },
     );
     expect(history[0].task).toBe("open example.com");
+  });
+
+  it("posts sandbox viewport changes to the backend", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        width: 390,
+        height: 844,
+        label: "Mobile 390x844",
+        applied: true,
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await setSandboxViewport({ width: 390, height: 844, label: "Mobile 390x844" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/sandbox/viewport",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ width: 390, height: 844, label: "Mobile 390x844" }),
+      }),
+    );
   });
 });

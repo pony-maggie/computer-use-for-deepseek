@@ -71,6 +71,41 @@ def test_open_url_returns_browser_snapshot_without_base64_screenshot(monkeypatch
     assert json.loads(result["output"])["title"] == "Example Domain"
 
 
+def test_resize_viewport_updates_framebuffer_and_browser_window(monkeypatch) -> None:
+    daemon = load_daemon_module()
+    commands: list[list[str]] = []
+
+    def fake_run_checked(command, *, cwd=None):
+        commands.append(command)
+
+    monkeypatch.setattr(daemon, "run_checked", fake_run_checked)
+
+    result = daemon.handle_computer(
+        {"action": "resize_viewport", "width": 390, "height": 844, "label": "Mobile 390x844"}
+    )
+
+    assert result == {
+        "output": "resized viewport to 390x844",
+        "system": "viewport=390x844 label=Mobile 390x844",
+    }
+    assert ["xrandr", "--fb", "390x844"] in commands
+    assert [
+        "xdotool",
+        "search",
+        "--onlyvisible",
+        "--class",
+        "chromium",
+        "windowmove",
+        "%@",
+        "0",
+        "0",
+        "windowsize",
+        "%@",
+        "390",
+        "844",
+    ] in commands
+
+
 def test_browser_snapshot_prefers_non_blank_browser_tab(monkeypatch) -> None:
     daemon = load_daemon_module()
 

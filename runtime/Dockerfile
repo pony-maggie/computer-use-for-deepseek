@@ -18,6 +18,7 @@ RUN set -eux; \
     websockify \
     x11vnc \
     xdotool \
+    x11-xserver-utils \
     xvfb \
     procps \
     fontconfig \

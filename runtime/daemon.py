@@ -13,8 +13,8 @@ from tempfile import NamedTemporaryFile
 
 DISPLAY = os.environ.get("DISPLAY", ":1")
 WORKSPACE = Path(os.environ.get("WORKSPACE_ROOT", "/workspace")).resolve()
-DISPLAY_WIDTH = os.environ.get("WIDTH", "1280")
-DISPLAY_HEIGHT = os.environ.get("HEIGHT", "800")
+DISPLAY_WIDTH = os.environ.get("WIDTH", "1440")
+DISPLAY_HEIGHT = os.environ.get("HEIGHT", "1112")
 DOM_SNAPSHOT_LIMIT = int(os.environ.get("DOM_SNAPSHOT_LIMIT", "12000"))
 
 
@@ -101,11 +101,48 @@ def browser_snapshot() -> dict:
 
 
 def handle_computer(payload: dict) -> dict:
+    global DISPLAY_WIDTH, DISPLAY_HEIGHT
     action = payload["action"]
     if action == "browser_snapshot":
         return {
             "output": json.dumps(browser_snapshot(), ensure_ascii=False),
             "system": "browser_snapshot=dom_first",
+        }
+    if action == "resize_viewport":
+        width = int(payload.get("width", 0))
+        height = int(payload.get("height", 0))
+        label = str(payload.get("label", f"{width}x{height}"))
+        if width < 320 or width > 1440 or height < 480 or height > 1112:
+            return {"error": "viewport dimensions out of range"}
+        try:
+            run_checked(["xrandr", "--fb", f"{width}x{height}"])
+        except RuntimeError:
+            # Some Xvfb builds do not support RandR framebuffer changes. Keep
+            # the browser-window resize path active so the runtime viewport
+            # still changes inside the available display.
+            pass
+        run_checked(
+            [
+                "xdotool",
+                "search",
+                "--onlyvisible",
+                "--class",
+                "chromium",
+                "windowmove",
+                "%@",
+                "0",
+                "0",
+                "windowsize",
+                "%@",
+                str(width),
+                str(height),
+            ]
+        )
+        DISPLAY_WIDTH = str(width)
+        DISPLAY_HEIGHT = str(height)
+        return {
+            "output": f"resized viewport to {width}x{height}",
+            "system": f"viewport={width}x{height} label={label}",
         }
     if action == "open_url":
         url = payload.get("text", "").strip()

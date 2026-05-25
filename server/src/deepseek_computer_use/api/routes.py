@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+import httpx
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -65,6 +66,19 @@ class VoiceInterpretRequest(BaseModel):
     current_task: str = ""
     run_status: str | None = None
     has_pending_confirmation: bool = False
+
+
+class SandboxViewportRequest(BaseModel):
+    width: int = Field(ge=320, le=1440)
+    height: int = Field(ge=480, le=1112)
+    label: str = Field(min_length=1, max_length=80)
+
+
+class SandboxViewportResponse(BaseModel):
+    width: int
+    height: int
+    label: str
+    applied: bool
 
 
 class RunState(BaseModel):
@@ -143,6 +157,28 @@ def interpret_voice(request: VoiceInterpretRequest) -> VoiceInterpretation:
         current_task=request.current_task,
         run_status=request.run_status,
         has_pending_confirmation=request.has_pending_confirmation,
+    )
+
+
+@router.post("/sandbox/viewport", response_model=SandboxViewportResponse)
+def set_sandbox_viewport(request: SandboxViewportRequest) -> SandboxViewportResponse:
+    payload = {
+        "name": "computer",
+        "computer": {
+            "action": "resize_viewport",
+            "width": request.width,
+            "height": request.height,
+            "label": request.label,
+        },
+    }
+    result = _post_runtime_tool_call(payload)
+    if result.get("error"):
+        raise HTTPException(status_code=502, detail=result["error"])
+    return SandboxViewportResponse(
+        width=request.width,
+        height=request.height,
+        label=request.label,
+        applied=True,
     )
 
 
@@ -300,6 +336,16 @@ def _build_voice_intent_parser() -> VoiceIntentParser:
         api_key=settings.deepseek_api_key,
         base_url=settings.deepseek_base_url,
     )
+
+
+def _post_runtime_tool_call(payload: dict[str, Any]) -> dict[str, Any]:
+    try:
+        with httpx.Client(timeout=10) as client:
+            response = client.post(f"{settings.runtime_action_url}/tool-call", json=payload)
+        response.raise_for_status()
+        return dict(response.json())
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"runtime viewport update failed: {exc}") from exc
 
 
 def _append_event(run: RunState, kind: str, message: str | dict[str, Any]) -> None:

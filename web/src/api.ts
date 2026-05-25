@@ -26,6 +26,16 @@ export type VoiceInterpretation = {
   prompt_cache_miss_tokens?: number;
 };
 
+export type SandboxViewportRequest = {
+  width: number;
+  height: number;
+  label: string;
+};
+
+export type SandboxViewportResponse = SandboxViewportRequest & {
+  applied: boolean;
+};
+
 async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init);
@@ -58,6 +68,18 @@ export async function createRun(task: string): Promise<Run> {
 
 export async function interpretVoice(request: VoiceInterpretRequest): Promise<VoiceInterpretation> {
   const response = await fetchApi(`${API_BASE}/voice/interpret`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}
+
+export async function setSandboxViewport(
+  request: SandboxViewportRequest,
+): Promise<SandboxViewportResponse> {
+  const response = await fetchApi(`${API_BASE}/sandbox/viewport`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),
