@@ -427,3 +427,17 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `cd web && npm run build`
   - `python3 -m json.tool feature_list.json`
   - `./init.sh`
+
+## 2026-05-25 Run Settings Disclosure and Sandbox CJK Fonts
+
+- Investigated two reported UX/runtime bugs:
+  - `Run Settings` relied on native `<details>/<summary>`, which was not working reliably for the user and hid Viewport Lab.
+  - Chinese text inside the sandbox Chromium rendered as missing glyph boxes because the Debian runtime image did not install CJK fonts.
+- Replaced the setup rail disclosures with explicit React-controlled accordion buttons for Task Assist and Run Settings.
+- Updated disclosure styling so expanded panels retain the simplified workbench layout while exposing Advanced Control Suite and Workspace.
+- Added `fontconfig` and `fonts-noto-cjk` to the sandbox runtime image and refresh the font cache during image build.
+- Verification completed:
+  - `cd web && npm run build`
+  - `docker compose config`
+  - Browser E2E on `http://127.0.0.1:3000/` confirmed clicking `运行设置` expands the panel and reveals `视口实验室`.
+- Runtime note: final visual verification for Chinese rendering requires the CI-built runtime image to be pulled with `./start.sh` after Actions completes.

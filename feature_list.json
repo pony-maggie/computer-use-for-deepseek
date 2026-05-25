@@ -23,7 +23,9 @@
       "name": "Implementation plan",
       "description": "Implementation plan decomposes backend, frontend, runtime, model adapter, workspace, safety, and smoke verification tasks.",
       "status": "done",
-      "dependencies": ["feat-002"],
+      "dependencies": [
+        "feat-002"
+      ],
       "evidence": "docs/superpowers/plans/2026-05-17-deepseek-computer-use.md exists and passed marker scan."
     },
     {
@@ -31,7 +33,11 @@
       "name": "Lightweight development harness",
       "description": "Add AGENTS.md, feature_list.json, progress.md, and init.sh so future agent sessions have instructions, state, scope control, verification, and lifecycle checks.",
       "status": "done",
-      "dependencies": ["feat-001", "feat-002", "feat-003"],
+      "dependencies": [
+        "feat-001",
+        "feat-002",
+        "feat-003"
+      ],
       "evidence": "./init.sh passed on 2026-05-17."
     },
     {
@@ -39,7 +45,9 @@
       "name": "Project scaffold",
       "description": "Create the backend, frontend, runtime, start/stop scripts, Docker Compose, and configuration skeleton described in the implementation plan.",
       "status": "done",
-      "dependencies": ["feat-004"],
+      "dependencies": [
+        "feat-004"
+      ],
       "evidence": "Task 1 scaffold created. docker compose config passed. Backend pytest passed with 1 test. Frontend npm run build passed."
     },
     {
@@ -47,7 +55,9 @@
       "name": "Computer action protocol",
       "description": "Implement provider-neutral action and observation models for screenshot, mouse, keyboard, scrolling, shell, and text-edit actions.",
       "status": "done",
-      "dependencies": ["feat-005"],
+      "dependencies": [
+        "feat-005"
+      ],
       "evidence": "ComputerAction and Observation protocol models implemented. Protocol tests passed with 4 tests. Backend pytest passed with 5 tests."
     },
     {
@@ -55,7 +65,9 @@
       "name": "Workspace and persistence foundation",
       "description": "Implement per-run workspace directories, path escape protection, SQLite schema, session helpers, and run repository basics.",
       "status": "done",
-      "dependencies": ["feat-006"],
+      "dependencies": [
+        "feat-006"
+      ],
       "evidence": "Workspace manager and persistence modules implemented. Workspace tests passed with 2 tests. Backend pytest passed with 7 tests."
     },
     {
@@ -63,7 +75,9 @@
       "name": "DeepSeek model adapter",
       "description": "Implement DeepSeek tool-call schema conversion, response parsing, and thinking-mode message handling.",
       "status": "done",
-      "dependencies": ["feat-007"],
+      "dependencies": [
+        "feat-007"
+      ],
       "evidence": "DeepSeekAdapter originally implemented with a generic tool schema, then aligned to split computer/bash/text_editor schemas in feat-015. Adapter tests now pass as part of the 25-test backend suite."
     },
     {
@@ -71,7 +85,10 @@
       "name": "Agent core and mock runtime",
       "description": "Implement runtime interface, mock runtime, safety policy, system prompt, and a basic agent loop that executes model tool calls through the runtime.",
       "status": "done",
-      "dependencies": ["feat-006", "feat-008"],
+      "dependencies": [
+        "feat-006",
+        "feat-008"
+      ],
       "evidence": "Runtime interface, mock runtime, safety policy, and AgentCore implemented. Safety and agent tests passed with 4 tests. Backend pytest passed with 13 tests."
     },
     {
@@ -79,7 +96,10 @@
       "name": "Run and workspace API",
       "description": "Add FastAPI routes for run creation, workspace file upload/list/download, and run event WebSocket connection.",
       "status": "done",
-      "dependencies": ["feat-005", "feat-007"],
+      "dependencies": [
+        "feat-005",
+        "feat-007"
+      ],
       "evidence": "Run/workspace API and WebSocket implemented. API route tests passed with 3 tests. Backend pytest passed with 16 tests."
     },
     {
@@ -87,7 +107,14 @@
       "name": "Sandbox runtime and web console",
       "description": "Implement Docker desktop runtime, noVNC viewing, local web console, workspace upload/download, and run controls.",
       "status": "done",
-      "dependencies": ["feat-005", "feat-006", "feat-007", "feat-008", "feat-009", "feat-010"],
+      "dependencies": [
+        "feat-005",
+        "feat-006",
+        "feat-007",
+        "feat-008",
+        "feat-009",
+        "feat-010"
+      ],
       "evidence": "DockerRuntime, runtime supervisor services, and local web console implemented. Runtime execution boundary was later aligned to a runtime action daemon in feat-015. Frontend npm run build passed. Backend pytest now passes with 25 tests."
     },
     {
@@ -95,7 +122,12 @@
       "name": "Run execution controls",
       "description": "Wire run start, pause, resume, and cancel controls through FastAPI and the web UI, including a configuration guard for missing DeepSeek API keys.",
       "status": "done",
-      "dependencies": ["feat-008", "feat-009", "feat-010", "feat-011"],
+      "dependencies": [
+        "feat-008",
+        "feat-009",
+        "feat-010",
+        "feat-011"
+      ],
       "evidence": "Run control API and UI actions implemented. API route tests passed with 5 tests. Backend pytest passed with 18 tests. Frontend npm run build passed."
     },
     {
@@ -103,7 +135,9 @@
       "name": "Smoke tests and user docs",
       "description": "Add API smoke tests and verify the user-facing README/startup path remains aligned with local web app usage.",
       "status": "done",
-      "dependencies": ["feat-012"],
+      "dependencies": [
+        "feat-012"
+      ],
       "evidence": "API smoke tests passed with 2 tests. Backend pytest passed with 20 tests. Frontend npm run build passed. start.sh missing-key setup path passed."
     },
     {
@@ -111,7 +145,9 @@
       "name": "Safety and evaluation",
       "description": "Add sensitive-action confirmation, action validation, audit trail, and smoke/evaluation workflows.",
       "status": "done",
-      "dependencies": ["feat-013"],
+      "dependencies": [
+        "feat-013"
+      ],
       "evidence": "Lightweight audit/event trail implemented for run creation, file upload, start errors, pause, resume, and cancel. API route tests passed with 6 tests. Backend pytest passed with 21 tests. Frontend npm run build passed."
     },
     {
@@ -119,7 +155,10 @@
       "name": "Claude demo alignment fixes",
       "description": "Align the design and implementation with the Anthropic quickstart and saved Zhihu field test: prebuilt runtime image path, split computer/bash/text_editor tools, normalized ToolResult, runtime action daemon boundary, and base64 screenshot results.",
       "status": "done",
-      "dependencies": ["feat-011", "feat-014"],
+      "dependencies": [
+        "feat-011",
+        "feat-014"
+      ],
       "evidence": "Design and implementation plan updated. Backend protocol, DeepSeek adapter, safety policy, runtime client, and runtime action daemon changes implemented. ./init.sh passed. docker compose config passed. docker compose dev overlay config passed. Backend pytest passed with 25 tests. Frontend npm run build passed. runtime/daemon.py py_compile passed."
     },
     {
@@ -127,7 +166,9 @@
       "name": "Run budget visibility and runtime smoke workflow",
       "description": "Expose run step/token/cost budget metadata, enforce token budget in the agent loop, show usage in the web UI, and add a runtime smoke script for prebuilt or dev runtime images.",
       "status": "done",
-      "dependencies": ["feat-015"],
+      "dependencies": [
+        "feat-015"
+      ],
       "evidence": "RunState now includes steps, token budget, token usage, and estimated cost. AgentCore enforces token budget when provider usage is available. Web run controls show step/token/cost metadata. scripts/smoke-runtime.sh added. Backend pytest passed with 25 tests. Frontend npm run build passed. Compose config and dev overlay config passed. bash -n smoke script and runtime daemon py_compile passed."
     },
     {
@@ -135,7 +176,9 @@
       "name": "GHCR runtime image publishing",
       "description": "Configure the project to publish and consume a prebuilt runtime image from GitHub Container Registry under the pony-maggie GitHub account.",
       "status": "done",
-      "dependencies": ["feat-015"],
+      "dependencies": [
+        "feat-015"
+      ],
       "evidence": "Runtime image name updated to ghcr.io/pony-maggie/computer-use-for-deepseek-runtime:latest and GitHub Actions workflow added. Workflow YAML parse passed. ./init.sh passed. docker compose config passed. Backend pytest passed with 25 tests. Frontend npm run build passed."
     },
     {
@@ -143,7 +186,10 @@
       "name": "API cost optimization controls",
       "description": "Expose DeepSeek prompt cache hit/miss usage, keep a stable prompt/tool loop, de-duplicate repeated screenshots by hash, prefer browser DOM snapshots for browser tasks, enforce token and estimated cost budgets, and add configurable fast/pro model routing.",
       "status": "done",
-      "dependencies": ["feat-016", "feat-017"],
+      "dependencies": [
+        "feat-016",
+        "feat-017"
+      ],
       "evidence": "AgentCore cost budget enforcement, prompt cache token accounting, screenshot hash compaction, browser_snapshot tool action, RunState/UI budget fields, and routing config implemented. Backend pytest passed with 28 tests. Frontend npm run build passed. ./init.sh passed. Compose config, dev overlay config, runtime daemon py_compile, and feature_list JSON validation passed."
     },
     {
@@ -151,7 +197,9 @@
       "name": "Voice input visibility fix",
       "description": "Make the browser voice input entry point obvious in the task panel and keep the harness aligned with the current voice input plan.",
       "status": "done",
-      "dependencies": ["feat-018"],
+      "dependencies": [
+        "feat-018"
+      ],
       "evidence": "ChatPanel now renders a visible Voice label beside the microphone icon. Targeted ChatPanel test failed before the change and passed after it. Full frontend test suite and build passed."
     },
     {
@@ -159,7 +207,9 @@
       "name": "Voice natural language actions",
       "description": "Use DeepSeek to interpret natural speech into task text plus constrained UI actions, route mixed voice requests through the existing Create Run and run-control buttons, and keep approval and rejection manual only.",
       "status": "done",
-      "dependencies": ["feat-019"],
+      "dependencies": [
+        "feat-019"
+      ],
       "evidence": "Backend /api/voice/interpret endpoint added with model parsing and local fallback. Frontend voice flow now calls the parser before executing UI actions. Server pytest passed with 61 tests. Web vitest passed with 36 tests. Web build passed. ./init.sh passed."
     },
     {
@@ -167,7 +217,9 @@
       "name": "Persistent voice mode and spoken feedback",
       "description": "Keep voice input active as a user-controlled mode, let users choose and persist the recognition language, speak back parsed intent and clarifying questions, and keep approval/rejection manual-only.",
       "status": "done",
-      "dependencies": ["feat-020"],
+      "dependencies": [
+        "feat-020"
+      ],
       "evidence": "Voice mode now restarts browser recognition while enabled, persists language settings, uses browser speech synthesis for intent feedback, and supports parser clarifying questions. Targeted server/web tests passed, full server pytest passed, full web vitest passed, web build passed, and ./init.sh passed."
     },
     {
@@ -175,7 +227,9 @@
       "name": "Current task visibility and run history",
       "description": "Keep the active task visible after run creation and store run history with ID, task, status, time, and final result for later review.",
       "status": "done",
-      "dependencies": ["feat-012"],
+      "dependencies": [
+        "feat-012"
+      ],
       "evidence": "RunControls displays current task text. Backend exposes GET /api/runs and persists run summaries to SQLite. Web sidebar renders selectable run history. Targeted backend/frontend tests passed."
     },
     {
@@ -183,7 +237,10 @@
       "name": "Visual run inspector and action preview",
       "description": "Redesign the run experience around a structured step timeline, screenshot thumbnails, action overlays, approval previews, and completion reports so users can supervise the computer-use loop.",
       "status": "done",
-      "dependencies": ["feat-018", "feat-022"],
+      "dependencies": [
+        "feat-018",
+        "feat-022"
+      ],
       "evidence": "Structured backend run events, frontend RunInspector, ComputerOverlay, ApprovalPreview, and run report implemented. Backend pytest passed with 68 tests. Frontend vitest passed with 52 tests. Frontend build passed. ./init.sh and feature_list JSON validation passed. Browser E2E on 2026-05-24 confirmed audit trail, final artifact text, and corrected prompt cache hit reporting."
     },
     {
@@ -191,7 +248,9 @@
       "name": "Reference context, templates, artifacts, and replay",
       "description": "Add the remaining planned workflow surfaces in one integrated pass: local reference context injection, task templates, artifact center, and replay/evaluation controls.",
       "status": "done",
-      "dependencies": ["feat-023"],
+      "dependencies": [
+        "feat-023"
+      ],
       "evidence": "ReferenceContextPanel, TaskTemplatesPanel, ArtifactCenter, and ReplayEvaluationPanel implemented. Frontend build passed. Frontend vitest passed with 52 tests. Backend pytest passed with 68 tests. ./init.sh and feature_list JSON validation passed. Browser E2E on 2026-05-24 confirmed template fill, local reference ingestion, workspace upload/artifacts, replay, benchmark marking, mock run completion, and noVNC visibility."
     },
     {
@@ -199,7 +258,10 @@
       "name": "Advanced control suite",
       "description": "Add browser/computer/hybrid mode selection, action policy controls, live context loop, URL/DOM inspector, task recorder, scenario packs, approval queue, self-healing strategy, benchmark lab, and viewport lab as a cohesive product layer.",
       "status": "done",
-      "dependencies": ["feat-023", "feat-024"],
+      "dependencies": [
+        "feat-023",
+        "feat-024"
+      ],
       "evidence": "AdvancedControlSuite, AgentOperationsPanel, execution profile injection, benchmark lab upgrade, design spec, and implementation plan added. Web build passed. Web vitest passed with 52 tests. Browser E2E confirmed scenario packs, mode switching, viewport lab, approval rules, workflow notes, Execution Profile injection, replay cleanup, failure-state error display, error event selection, and error count reporting."
     },
     {
@@ -207,7 +269,10 @@
       "name": "Bilingual interface and voice language alignment",
       "description": "Add a global Chinese/English UI language switch and make voice recognition follow the selected interface language instead of showing a separate voice language selector.",
       "status": "done",
-      "dependencies": ["feat-021", "feat-025"],
+      "dependencies": [
+        "feat-021",
+        "feat-025"
+      ],
       "evidence": "Frontend i18n provider, language switcher, localized panels, localized templates/scenarios, and voice-language alignment implemented. Targeted i18n/voice/UI tests passed with 18 tests. Full web vitest passed with 53 tests. Web production build passed. Browser E2E on 2026-05-24 confirmed Chinese and English UI switching, document lang updates to en-US, and no remaining Voice language/语音语言 selector text."
     },
     {
@@ -215,7 +280,10 @@
       "name": "Local acceptance safety hardening",
       "description": "Update local acceptance coverage for the current product surface and harden bash safety so shell redirection writes require approval.",
       "status": "done",
-      "dependencies": ["feat-025", "feat-026"],
+      "dependencies": [
+        "feat-025",
+        "feat-026"
+      ],
       "evidence": "docs/local-acceptance.md updated for multilingual UI, advanced controls, run inspector, artifacts, history, replay, and safety approval flows. Browser E2E on 2026-05-24 found echo redirection writes were incorrectly allowed. Added a failing safety test for echo redirection, fixed SafetyPolicy redirection handling, and verified the targeted test and full safety test file passed."
     },
     {
@@ -223,7 +291,11 @@
       "name": "Sandbox-first workbench layout",
       "description": "Redesign the local web console so the sandbox computer remains the primary first-viewport surface while setup controls and live run supervision scroll independently in side rails.",
       "status": "done",
-      "dependencies": ["feat-023", "feat-025", "feat-026"],
+      "dependencies": [
+        "feat-023",
+        "feat-025",
+        "feat-026"
+      ],
       "evidence": "Design spec added and App/styles refactored to a setup/sandbox/inspector workbench. cd web && npm run build passed. Browser E2E at 1440x900 confirmed idle, long-task, running, and completed/canceled states keep the sandbox iframe fully visible in the first viewport while right rail content scrolls independently. Browser E2E at 1180x900 confirmed the responsive top row keeps setup and sandbox at 720px before the inspector row."
     },
     {
@@ -231,8 +303,20 @@
       "name": "Simplified Workbench v2",
       "description": "Reduce the default interface to task setup, sandbox, and a tabbed run monitor while moving templates, references, settings, debug, replay, and evaluation behind explicit disclosure or tab controls.",
       "status": "done",
-      "dependencies": ["feat-028"],
+      "dependencies": [
+        "feat-028"
+      ],
       "evidence": "Left setup rail now collapses templates/references and run settings by default. Right inspector rail now uses Overview, Steps, Files, and Debug tabs. cd web && npm run build passed. Browser E2E at 1440x900 confirmed the simplified default view, Debug tab scrolling, and a completed run in Steps tab with separated Audit Trail, Step Details, and Run Report sections."
+    },
+    {
+      "id": "feat-030",
+      "name": "Run settings disclosure and sandbox CJK font fix",
+      "description": "Replace native Run Settings disclosure with an explicit controlled accordion so Viewport Lab is reachable, and install CJK fonts in the sandbox runtime image so Chinese text renders correctly inside Chromium/noVNC.",
+      "status": "done",
+      "dependencies": [
+        "feat-029"
+      ],
+      "evidence": "cd web && npm run build passed. docker compose config passed. Browser E2E at http://127.0.0.1:3000/ confirmed clicking 运行设置 expands the panel and shows 视口实验室. Runtime Dockerfile now installs fontconfig and fonts-noto-cjk; final Chinese rendering requires the rebuilt runtime image from CI to be pulled by start.sh."
     }
   ]
 }

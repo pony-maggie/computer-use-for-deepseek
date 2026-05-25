@@ -20,6 +20,9 @@ RUN set -eux; \
     xdotool \
     xvfb \
     procps \
+    fontconfig \
+    fonts-noto-cjk \
+    && fc-cache -f \
     && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \

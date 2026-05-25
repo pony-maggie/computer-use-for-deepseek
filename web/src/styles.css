@@ -42,24 +42,41 @@ body {
   overflow: hidden;
 }
 
-.setup-disclosure > summary {
+.setup-disclosure-toggle {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 14px;
   color: #1d2430;
   font-weight: 700;
+  text-align: left;
+  background: #ffffff;
 }
 
-.setup-disclosure[open] > summary {
+.setup-disclosure-toggle:hover {
+  background: #f8fafc;
+}
+
+.setup-disclosure-toggle[aria-expanded="true"] {
   border-bottom: 1px solid #e4e7ec;
 }
 
-.setup-disclosure > .panel {
+.setup-disclosure-content {
+  display: grid;
+}
+
+.setup-disclosure-content > .panel {
   border: 0;
   border-radius: 0;
   border-bottom: 1px solid #eef2f7;
 }
 
-.setup-disclosure > .panel:last-child {
+.setup-disclosure-content > .panel:last-child {
   border-bottom: 0;
 }
 

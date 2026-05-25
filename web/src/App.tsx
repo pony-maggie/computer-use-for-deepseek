@@ -56,6 +56,8 @@ export default function App() {
   const [controlProfile, setControlProfile] = useState<ControlProfile>(defaultControlProfile);
   const [runActionError, setRunActionError] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<"overview" | "steps" | "files" | "debug">("overview");
+  const [taskAssistOpen, setTaskAssistOpen] = useState(false);
+  const [runSettingsOpen, setRunSettingsOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -249,24 +251,48 @@ export default function App() {
           taskDraft={taskDraft}
           taskDraftRevision={taskDraftRevision}
         />
-        <details className="setup-disclosure">
-          <summary>{t("workbench.taskAssist")}</summary>
-          <TaskTemplatesPanel onSelectTemplate={selectTemplate} />
-          <ReferenceContextPanel
-            onContextChange={(context) => {
-              setReferenceContext(context);
-            }}
-          />
-        </details>
-        <details className="setup-disclosure">
-          <summary>{t("workbench.runSettings")}</summary>
-          <AdvancedControlSuite
-            profile={controlProfile}
-            onProfileChange={setControlProfile}
-            onApplyScenario={applyScenario}
-          />
-          <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
-        </details>
+        <section className="setup-disclosure">
+          <button
+            type="button"
+            className="setup-disclosure-toggle"
+            aria-expanded={taskAssistOpen}
+            onClick={() => setTaskAssistOpen((open) => !open)}
+          >
+            <span aria-hidden="true">{taskAssistOpen ? "v" : ">"}</span>
+            {t("workbench.taskAssist")}
+          </button>
+          {taskAssistOpen ? (
+            <div className="setup-disclosure-content">
+              <TaskTemplatesPanel onSelectTemplate={selectTemplate} />
+              <ReferenceContextPanel
+                onContextChange={(context) => {
+                  setReferenceContext(context);
+                }}
+              />
+            </div>
+          ) : null}
+        </section>
+        <section className="setup-disclosure">
+          <button
+            type="button"
+            className="setup-disclosure-toggle"
+            aria-expanded={runSettingsOpen}
+            onClick={() => setRunSettingsOpen((open) => !open)}
+          >
+            <span aria-hidden="true">{runSettingsOpen ? "v" : ">"}</span>
+            {t("workbench.runSettings")}
+          </button>
+          {runSettingsOpen ? (
+            <div className="setup-disclosure-content">
+              <AdvancedControlSuite
+                profile={controlProfile}
+                onProfileChange={setControlProfile}
+                onApplyScenario={applyScenario}
+              />
+              <WorkspacePanel runId={runId} runStatus={status} runUpdatedAt={run?.updated_at ?? null} />
+            </div>
+          ) : null}
+        </section>
       </aside>
 
       <section className="sandbox-stage" aria-label="Sandbox computer stage">
