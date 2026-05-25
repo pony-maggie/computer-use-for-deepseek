@@ -99,6 +99,26 @@ Use the web app to upload files into a task workspace. The AI can read and edit 
 
 For safety, the app does not mount your entire home directory by default.
 
+## Good Fit Tasks
+
+Computer Use for DeepSeek works best as a supervised browser and file assistant: it can prepare, inspect, organize, and draft work while you stay in control of final decisions.
+
+Good fits:
+
+- Web research: open public pages, compare products, collect links, summarize findings, and turn page content into structured notes.
+- Web forms and admin tools: fill drafts from reference material, check fields, preview changes, and stop before submission.
+- File processing: summarize uploaded documents, extract key points, rewrite content, and save generated files under the task workspace.
+- Product QA: open a site, follow a user flow, check layout or language switching, and report where a page gets stuck.
+- Repeated web workflows: navigate a known dashboard, inspect status, download reports, or prepare recurring browser tasks for review.
+
+Poor fits for full automation:
+
+- Sending email, posting messages, publishing content, or submitting forms without human review.
+- Payments, purchases, cancellations, permission changes, or deleting data.
+- Login, CAPTCHA, two-factor authentication, password changes, or account recovery.
+- Legal, financial, medical, or other high-stakes decisions.
+- High-volume, stable API automation that should be implemented as a dedicated script or integration instead of browser control.
+
 ## Run History
 
 After you create a task, the current run panel keeps showing the task text while the run executes. The sidebar also keeps a run history with the run ID, task, status, time, and final result when available. History is stored under the local `data/` directory used by `./start.sh`, so it remains available after restarting the app.
