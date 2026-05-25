@@ -256,7 +256,10 @@ export default function App() {
             type="button"
             className="setup-disclosure-toggle"
             aria-expanded={taskAssistOpen}
-            onClick={() => setTaskAssistOpen((open) => !open)}
+            onClick={() => {
+              setTaskAssistOpen((open) => !open);
+              setRunSettingsOpen(false);
+            }}
           >
             <span aria-hidden="true">{taskAssistOpen ? "v" : ">"}</span>
             {t("workbench.taskAssist")}
@@ -277,7 +280,10 @@ export default function App() {
             type="button"
             className="setup-disclosure-toggle"
             aria-expanded={runSettingsOpen}
-            onClick={() => setRunSettingsOpen((open) => !open)}
+            onClick={() => {
+              setRunSettingsOpen((open) => !open);
+              setTaskAssistOpen(false);
+            }}
           >
             <span aria-hidden="true">{runSettingsOpen ? "v" : ">"}</span>
             {t("workbench.runSettings")}

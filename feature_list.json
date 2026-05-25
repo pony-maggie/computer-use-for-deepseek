@@ -316,7 +316,7 @@
       "dependencies": [
         "feat-029"
       ],
-      "evidence": "cd web && npm run build passed. docker compose config passed. Browser E2E at http://127.0.0.1:3000/ confirmed clicking 运行设置 expands the panel and shows 视口实验室. Runtime Dockerfile now installs fontconfig and fonts-noto-cjk; final Chinese rendering requires the rebuilt runtime image from CI to be pulled by start.sh."
+      "evidence": "cd web && npm run build passed. docker compose config passed. Browser E2E at http://127.0.0.1:3000/ confirmed clicking 运行设置 expands the panel and shows 视口实验室. Runtime Dockerfile now installs fontconfig and fonts-noto-cjk; final Chinese rendering requires the rebuilt runtime image from CI to be pulled by start.sh. Follow-up fix: Task Assist and Run Settings now behave as an exclusive accordion with bounded internal disclosure scrolling to prevent left-rail menu overlap."
     }
   ]
 }

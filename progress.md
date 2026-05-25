@@ -441,3 +441,12 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `docker compose config`
   - Browser E2E on `http://127.0.0.1:3000/` confirmed clicking `运行设置` expands the panel and reveals `视口实验室`.
 - Runtime note: final visual verification for Chinese rendering requires the CI-built runtime image to be pulled with `./start.sh` after Actions completes.
+
+## 2026-05-25 Left Rail Accordion Overlap Follow-up
+
+- Confirmed from the latest desktop screenshot that sandbox Chinese rendering is fixed and the remaining issue is left-rail expanded menu collision when `模板与参考资料` and `运行设置` are both open.
+- Changed the setup disclosures to an exclusive accordion: opening one section closes the other.
+- Added a bounded internal scroll area for disclosure content so a large panel cannot visually collide with the next setup section.
+- Verification completed:
+  - `cd web && npm run build`
+  - Browser E2E on `http://127.0.0.1:3000/` confirmed `模板与参考资料` expands first, clicking `运行设置` collapses it, and `运行设置` expands without overlapping the previous menu.

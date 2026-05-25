@@ -68,6 +68,9 @@ body {
 
 .setup-disclosure-content {
   display: grid;
+  max-height: min(520px, calc(100dvh - 300px));
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .setup-disclosure-content > .panel {
