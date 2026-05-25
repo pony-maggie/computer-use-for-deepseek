@@ -327,6 +327,17 @@
         "feat-030"
       ],
       "evidence": "Added design and implementation plan docs. Frontend setSandboxViewport API test passed. Backend /api/sandbox/viewport forwarding and validation tests passed. Runtime resize_viewport daemon test passed. Related backend route/runtime tests passed with 23 tests. Web production build passed. docker compose config passed. Browser E2E on Vite port 3001 confirmed Mobile and Tablet selections update the center sandbox frame, badge, data viewport, and active button state. Full runtime browser verification requires the new backend/runtime images because local 3000/8000 were occupied by old Docker services."
+    },
+    {
+      "id": "feat-032",
+      "name": "Invisible memory",
+      "description": "Add a backend-only memory layer that silently recalls durable preferences, workflows, safety boundaries, stable facts, and failure lessons without exposing a memory UI or storing full task details.",
+      "status": "done",
+      "dependencies": [
+        "feat-007",
+        "feat-023"
+      ],
+      "evidence": "Backend-only invisible memory implemented with SQLite persistence, deterministic capture filters, hidden recall injection, API invisibility tests, and post-run capture. Full regression passed: server pytest 81 tests, web vitest 54 tests, web build, docker compose config, dev compose config, runtime daemon py_compile, runtime smoke, feature_list JSON validation, and ./init.sh."
     }
   ]
 }

@@ -14,6 +14,7 @@ from sqlalchemy import inspect, text
 from deepseek_computer_use.agent.core import AgentCore
 from deepseek_computer_use.agent.events import normalize_event_payload
 from deepseek_computer_use.config import settings
+from deepseek_computer_use.memory.service import MemoryCaptureInput, MemoryService
 from deepseek_computer_use.models.deepseek import DeepSeekAdapter
 from deepseek_computer_use.models.protocol import AgentStatus, ToolCall
 from deepseek_computer_use.persistence.database import (
@@ -22,6 +23,7 @@ from deepseek_computer_use.persistence.database import (
     create_tables,
     session_scope,
 )
+from deepseek_computer_use.persistence.repositories import MemoryRepository
 from deepseek_computer_use.persistence.schema import RunEventRecord, RunRecord
 from deepseek_computer_use.runtime.docker_runtime import DockerRuntime
 from deepseek_computer_use.runtime.mock_runtime import MockRuntime
@@ -338,6 +340,39 @@ def _build_voice_intent_parser() -> VoiceIntentParser:
     )
 
 
+def _build_memory_service() -> MemoryService:
+    return MemoryService(
+        max_recall=settings.app_memory_max_recall,
+        max_capture_per_run=settings.app_memory_max_capture_per_run,
+    )
+
+
+def _recall_memory_context(task: str) -> str:
+    if not settings.app_memory_enabled:
+        return ""
+    with session_scope(_session_factory) as session:
+        repo = MemoryRepository(session)
+        records = repo.list_memories()
+        service = _build_memory_service()
+        ranked = service.rank_memories(
+            task,
+            [
+                {
+                    "id": record.id,
+                    "kind": record.kind,
+                    "summary": record.summary,
+                    "confidence": record.confidence,
+                    "use_count": record.use_count,
+                }
+                for record in records
+            ],
+        )
+        repo.mark_used([int(memory["id"]) for memory in ranked if "id" in memory])
+        return service.format_context(
+            [{"kind": str(memory["kind"]), "summary": str(memory["summary"])} for memory in ranked]
+        )
+
+
 def _post_runtime_tool_call(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         with httpx.Client(timeout=10) as client:
@@ -494,6 +529,37 @@ def _apply_run_result(run: RunState, result) -> None:
     )
     if run.pending_confirmation_summary:
         _append_event(run, "confirmation", f"Approval required for {run.pending_confirmation_summary}")
+    if result.status in {AgentStatus.completed.value, AgentStatus.failed.value}:
+        _capture_memory_from_run(run)
+
+
+def _capture_memory_from_run(run: RunState) -> None:
+    if not settings.app_memory_enabled:
+        return
+    service = _build_memory_service()
+    candidates = service.extract_candidates(
+        MemoryCaptureInput(
+            run_id=run.run_id,
+            task=run.task,
+            final_text=run.final_text,
+            events=run.events[-20:],
+            output_files=[],
+        )
+    )
+    if not candidates:
+        return
+    with session_scope(_session_factory) as session:
+        repo = MemoryRepository(session)
+        for candidate in candidates:
+            confidence = float(candidate["confidence"])
+            if confidence < settings.app_memory_min_confidence:
+                continue
+            repo.add_memory(
+                kind=str(candidate["kind"]),
+                summary=str(candidate["summary"]),
+                source_run_id=run.run_id,
+                confidence=confidence,
+            )
 
 
 def _estimate_cost_usd(*, prompt_tokens: int, completion_tokens: int) -> float:
@@ -543,6 +609,7 @@ def _build_agent(run: RunState) -> AgentCore:
         cost_budget_usd=settings.app_cost_budget_usd,
         input_usd_per_mtok=settings.deepseek_input_usd_per_mtok,
         output_usd_per_mtok=settings.deepseek_output_usd_per_mtok,
+        memory_context=_recall_memory_context(run.task),
         on_event=lambda kind, payload: _append_event(run, kind, payload),
     )
 

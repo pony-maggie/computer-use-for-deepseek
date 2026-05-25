@@ -32,6 +32,7 @@ class AgentCore:
         cost_budget_usd: float = 0.0,
         input_usd_per_mtok: float = 0.0,
         output_usd_per_mtok: float = 0.0,
+        memory_context: str = "",
         on_event: ProgressCallback | None = None,
     ) -> None:
         self.model = model
@@ -42,13 +43,17 @@ class AgentCore:
         self.cost_budget_usd = cost_budget_usd
         self.input_usd_per_mtok = input_usd_per_mtok
         self.output_usd_per_mtok = output_usd_per_mtok
+        self.memory_context = memory_context.strip()
         self.on_event = on_event
         self.seen_image_hashes: set[str] = set()
 
     async def run(self, task: str) -> AgentRunResult:
+        user_content = task
+        if self.memory_context:
+            user_content = f"{self.memory_context}\n\nTask:\n{task}"
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": task},
+            {"role": "user", "content": user_content},
         ]
         return await self._run_loop(
             messages=messages,

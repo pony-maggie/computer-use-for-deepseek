@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invisible Memory Architecture - Computer Use for DeepSeek</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #14202b;
+        --muted: #5d6b78;
+        --line: #b8c5d1;
+        --bg: #f7f9fb;
+        --panel: #ffffff;
+        --blue: #2563eb;
+        --teal: #0f766e;
+        --amber: #b45309;
+        --rose: #be123c;
+        --green: #15803d;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 249, 251, 0.95)),
+          radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 38%),
+          var(--bg);
+        color: var(--ink);
+      }
+
+      .page {
+        width: 1280px;
+        min-height: 900px;
+        padding: 48px 56px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 36px;
+        margin-bottom: 34px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 40px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      .badge {
+        align-self: flex-start;
+        border: 1px solid rgba(20, 32, 43, 0.12);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--teal);
+        padding: 9px 14px;
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .diagram {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 1.1fr 1fr;
+        gap: 26px;
+        align-items: stretch;
+      }
+
+      .column {
+        display: grid;
+        gap: 18px;
+      }
+
+      .card {
+        position: relative;
+        min-height: 128px;
+        border: 1px solid rgba(20, 32, 43, 0.13);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.94);
+        box-shadow: 0 18px 48px rgba(20, 32, 43, 0.08);
+        padding: 20px;
+      }
+
+      .card h2 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 10px;
+        font-size: 19px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+
+      .card p,
+      .card li {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .card p {
+        margin: 0;
+      }
+
+      ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.1);
+      }
+
+      .user {
+        color: var(--blue);
+      }
+
+      .agent {
+        color: var(--teal);
+      }
+
+      .store {
+        color: var(--amber);
+      }
+
+      .guard {
+        color: var(--rose);
+      }
+
+      .result {
+        color: var(--green);
+      }
+
+      .center {
+        display: grid;
+        grid-template-rows: auto auto auto;
+        gap: 18px;
+      }
+
+      .memory-core {
+        min-height: 258px;
+        border: 2px solid rgba(15, 118, 110, 0.28);
+        background:
+          linear-gradient(180deg, rgba(240, 253, 250, 0.95), rgba(255, 255, 255, 0.96));
+      }
+
+      .memory-core h2 {
+        font-size: 24px;
+      }
+
+      .rules {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .rule {
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid rgba(15, 118, 110, 0.15);
+        padding: 12px;
+      }
+
+      .rule strong {
+        display: block;
+        color: var(--ink);
+        margin-bottom: 4px;
+        font-size: 14px;
+      }
+
+      .rule span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .arrow {
+        position: absolute;
+        height: 2px;
+        background: var(--line);
+      }
+
+      .arrow::after {
+        content: "";
+        position: absolute;
+        top: -5px;
+        right: -1px;
+        border-left: 9px solid var(--line);
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent;
+      }
+
+      .a1 {
+        left: 372px;
+        top: 179px;
+        width: 96px;
+      }
+
+      .a2 {
+        right: 372px;
+        top: 179px;
+        width: 96px;
+      }
+
+      .a3 {
+        left: 372px;
+        top: 532px;
+        width: 96px;
+      }
+
+      .a4 {
+        right: 372px;
+        top: 532px;
+        width: 96px;
+      }
+
+      .vertical {
+        position: absolute;
+        left: 638px;
+        top: 364px;
+        width: 2px;
+        height: 86px;
+        background: var(--line);
+      }
+
+      .vertical::after {
+        content: "";
+        position: absolute;
+        left: -5px;
+        bottom: -1px;
+        border-top: 9px solid var(--line);
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+      }
+
+      .note-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-top: 26px;
+      }
+
+      .note {
+        border-left: 4px solid var(--teal);
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 6px;
+        padding: 14px 14px 13px;
+        box-shadow: 0 8px 22px rgba(20, 32, 43, 0.05);
+      }
+
+      .note strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+
+      .note span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.38;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header>
+        <div>
+          <h1>Invisible Memory Architecture</h1>
+          <p class="subtitle">
+            Computer Use for DeepSeek keeps the visible product simple while a conservative
+            backend memory layer recalls durable context and forgets noisy task detail.
+          </p>
+        </div>
+        <div class="badge">No UI surface - prompt context only</div>
+      </header>
+
+      <section class="diagram" aria-label="Invisible memory architecture diagram">
+        <div class="arrow a1"></div>
+        <div class="arrow a2"></div>
+        <div class="arrow a3"></div>
+        <div class="arrow a4"></div>
+        <div class="vertical"></div>
+
+        <div class="column">
+          <article class="card user">
+            <h2><span class="dot"></span>User Task</h2>
+            <p>
+              The user creates a normal run. No memory controls, no extra choices, no exposed
+              recall list.
+            </p>
+          </article>
+
+          <article class="card result">
+            <h2><span class="dot"></span>Run Result</h2>
+            <p>
+              Final answer, structured events, confirmations, failures, and output names become
+              bounded capture inputs.
+            </p>
+          </article>
+        </div>
+
+        <div class="center">
+          <article class="card memory-core">
+            <h2><span class="dot"></span>Memory Service</h2>
+            <p>
+              Recalls up to five relevant memories before execution, then captures zero to three
+              durable summaries after terminal runs.
+            </p>
+            <div class="rules">
+              <div class="rule">
+                <strong>Remember</strong>
+                <span>Preferences, workflows, stable facts, safety boundaries, lessons.</span>
+              </div>
+              <div class="rule">
+                <strong>Forget</strong>
+                <span>Credentials, raw files, screenshots, DOM dumps, one-off page detail.</span>
+              </div>
+              <div class="rule">
+                <strong>Retrieve</strong>
+                <span>Keyword and FTS ranking first; vectors can come later.</span>
+              </div>
+              <div class="rule">
+                <strong>Constrain</strong>
+                <span>Memory informs prompts but never bypasses approval policy.</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card store">
+            <h2><span class="dot"></span>SQLite Memory Store</h2>
+            <p>
+              A compact `memories` table stores kind, summary, source run, confidence, use count,
+              and optional expiry.
+            </p>
+          </article>
+        </div>
+
+        <div class="column">
+          <article class="card agent">
+            <h2><span class="dot"></span>Hidden Agent Context</h2>
+            <p>
+              Relevant summaries are injected into a private Memory Context block before the
+              existing computer-use loop begins.
+            </p>
+          </article>
+
+          <article class="card guard">
+            <h2><span class="dot"></span>Safety Boundary</h2>
+            <p>
+              Memory can suggest caution or preference, but SafetyPolicy still decides blocks and
+              confirmations.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="note-strip">
+        <div class="note">
+          <strong>Quiet by design</strong>
+          <span>The product stays task, sandbox, and results focused.</span>
+        </div>
+        <div class="note">
+          <strong>High signal only</strong>
+          <span>Summaries are short enough to read and safe enough to reuse.</span>
+        </div>
+        <div class="note">
+          <strong>Local first</strong>
+          <span>Memory lives beside run history in the existing local database.</span>
+        </div>
+        <div class="note">
+          <strong>Auditable source</strong>
+          <span>Run events remain the source for debugging; memory is derived context.</span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

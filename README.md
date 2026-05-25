@@ -103,6 +103,16 @@ For safety, the app does not mount your entire home directory by default.
 
 After you create a task, the current run panel keeps showing the task text while the run executes. The sidebar also keeps a run history with the run ID, task, status, time, and final result when available. History is stored under the local `data/` directory used by `./start.sh`, so it remains available after restarting the app.
 
+## Invisible Memory
+
+Computer Use for DeepSeek includes invisible memory: the app quietly keeps a few durable lessons from completed runs so future tasks feel less like starting from zero. It is designed to remember the shape of your work, not the private details of every task.
+
+For example, it can keep concise notes such as preferred response language, common workflow habits, stable sandbox facts, and failure lessons. It should not store raw uploaded file contents, screenshots, DOM dumps, credentials, one-off webpage details, or click-by-click history.
+
+![Invisible memory architecture](docs/images/memory-architecture.png)
+
+This memory stays out of the normal UI. The agent receives a small hidden `Memory Context` only when a future task appears relevant, and the existing safety policy still decides what must be blocked or confirmed.
+
 ## Voice Input
 
 The Web UI supports a persistent browser voice mode for the task box and a small set of task-control commands. Turn on `Voice`, allow microphone access, choose the recognition language, and speak naturally. The app keeps listening while voice mode is on, uses the transcript to separate task text from UI actions, and speaks back what it understood or what it needs clarified. You can say things like `打开浏览器，访问 baidu.com，开始运行` or `create run`, `start run`, `pause`, `resume`, `cancel`, and `clear input`.

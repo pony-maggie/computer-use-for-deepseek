@@ -1,10 +1,16 @@
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
 from deepseek_computer_use.models.protocol import AgentStatus
-from deepseek_computer_use.persistence.schema import RunEventRecord, RunRecord, WorkspaceFileRecord
+from deepseek_computer_use.persistence.schema import (
+    MemoryRecord,
+    RunEventRecord,
+    RunRecord,
+    WorkspaceFileRecord,
+)
 
 
 @dataclass(frozen=True)
@@ -57,3 +63,39 @@ class RunRepository:
                 size_bytes=size_bytes,
             )
         )
+
+
+class MemoryRepository:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def add_memory(
+        self,
+        *,
+        kind: str,
+        summary: str,
+        source_run_id: str | None,
+        confidence: float,
+    ) -> MemoryRecord:
+        record = MemoryRecord(
+            kind=kind,
+            summary=summary,
+            source_run_id=source_run_id,
+            confidence=confidence,
+        )
+        self.session.add(record)
+        self.session.flush()
+        return record
+
+    def list_memories(self) -> list[MemoryRecord]:
+        return self.session.query(MemoryRecord).order_by(MemoryRecord.updated_at.desc()).all()
+
+    def mark_used(self, memory_ids: list[int]) -> None:
+        if not memory_ids:
+            return
+        now = datetime.now(UTC)
+        records = self.session.query(MemoryRecord).filter(MemoryRecord.id.in_(memory_ids)).all()
+        for record in records:
+            record.use_count += 1
+            record.last_used_at = now
+            record.updated_at = now

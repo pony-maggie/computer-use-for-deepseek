@@ -189,6 +189,17 @@ class RecordingRuntime:
         return ToolResult(output="approved")
 
 
+class RecordingFirstMessageModel(FakeModel):
+    def __init__(self) -> None:
+        super().__init__()
+        self.first_messages: list[dict] = []
+
+    def complete(self, messages):
+        if not self.first_messages:
+            self.first_messages = list(messages)
+        return super().complete(messages)
+
+
 @pytest.mark.asyncio
 async def test_agent_loop_runs_tool_and_returns_final_text() -> None:
     runtime = MockRuntime()
@@ -335,3 +346,27 @@ async def test_agent_emits_structured_confirmation_event() -> None:
     assert confirmation_event["tool_name"] == "bash"
     assert confirmation_event["action_name"] == "shell"
     assert confirmation_event["action_payload"]["command"] == "printf approved"
+
+
+@pytest.mark.asyncio
+async def test_agent_injects_hidden_memory_context_when_provided() -> None:
+    model = RecordingFirstMessageModel()
+    agent = AgentCore(
+        model=model,
+        runtime=MockRuntime(),
+        safety=SafetyPolicy(display_width=1280, display_height=800),
+        max_steps=5,
+        memory_context="Memory Context:\n- preference: User prefers concise Simplified Chinese responses.",
+    )
+
+    await agent.run("summarize this report")
+
+    assert model.first_messages[1] == {
+        "role": "user",
+        "content": (
+            "Memory Context:\n"
+            "- preference: User prefers concise Simplified Chinese responses.\n\n"
+            "Task:\n"
+            "summarize this report"
+        ),
+    }

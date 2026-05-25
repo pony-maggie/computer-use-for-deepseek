@@ -1,6 +1,12 @@
 from fastapi.testclient import TestClient
 
-from deepseek_computer_use.api.routes import RunState, _session_factory, runs
+from deepseek_computer_use.api.routes import (
+    RunState,
+    _apply_run_result,
+    _build_agent,
+    _session_factory,
+    runs,
+)
 from deepseek_computer_use.agent.events import AgentRunResult
 from deepseek_computer_use.main import create_app
 from deepseek_computer_use.models.protocol import BashAction, ToolCall
@@ -228,6 +234,99 @@ def test_start_run_requires_deepseek_api_key() -> None:
 
     assert response.status_code == 400
     assert response.json()["detail"] == "DEEPSEEK_API_KEY is not configured"
+
+
+def test_run_api_does_not_expose_memory_context(monkeypatch) -> None:
+    client = TestClient(create_app())
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._recall_memory_context",
+        lambda task: "Memory Context:\n- preference: hidden",
+        raising=False,
+    )
+
+    response = client.post("/api/runs", json={"task": "summarize report"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "memory" not in body
+    assert "Memory Context" not in str(body)
+
+
+def test_build_agent_receives_recalled_memory_context(monkeypatch) -> None:
+    run = RunState(run_id="run_memory", task="summarize report", status="created")
+
+    class FakeAdapter:
+        def __init__(self, **kwargs):
+            pass
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._recall_memory_context",
+        lambda task: "Memory Context:\n- preference: hidden",
+        raising=False,
+    )
+    monkeypatch.setattr("deepseek_computer_use.api.routes.DeepSeekAdapter", FakeAdapter)
+
+    agent = _build_agent(run)
+
+    assert agent.memory_context == "Memory Context:\n- preference: hidden"
+
+
+def test_apply_run_result_captures_memory_candidate(monkeypatch) -> None:
+    captured: list[dict] = []
+
+    class FakeMemoryService:
+        def extract_candidates(self, capture):
+            assert capture.run_id == "run_capture"
+            assert capture.task == "以后都用简体中文简短回答"
+            assert capture.final_text == "好的，以后我会用简体中文简短回答。"
+            return [
+                {
+                    "kind": "preference",
+                    "summary": "User prefers concise Simplified Chinese responses.",
+                    "confidence": 0.85,
+                }
+            ]
+
+    class FakeMemoryRepository:
+        def __init__(self, session):
+            pass
+
+        def add_memory(self, **kwargs):
+            captured.append(kwargs)
+
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes._build_memory_service",
+        lambda: FakeMemoryService(),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "deepseek_computer_use.api.routes.MemoryRepository",
+        FakeMemoryRepository,
+        raising=False,
+    )
+
+    run = RunState(
+        run_id="run_capture",
+        task="以后都用简体中文简短回答",
+        status="running",
+    )
+    result = AgentRunResult(
+        status="completed",
+        final_text="好的，以后我会用简体中文简短回答。",
+        steps=1,
+    )
+
+    _apply_run_result(run, result)
+
+    assert captured == [
+        {
+            "kind": "preference",
+            "summary": "User prefers concise Simplified Chinese responses.",
+            "source_run_id": "run_capture",
+            "confidence": 0.85,
+        }
+    ]
 
 
 def test_pause_resume_and_cancel_run() -> None:

@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     app_max_steps: int = 30
     app_token_budget: int = 2_000_000
     app_cost_budget_usd: float = 0.0
+    app_memory_enabled: bool = True
+    app_memory_max_recall: int = 5
+    app_memory_max_capture_per_run: int = 3
+    app_memory_min_confidence: float = 0.65
     deepseek_input_usd_per_mtok: float = 0.0
     deepseek_output_usd_per_mtok: float = 0.0
     app_runtime_mode: str = "docker"

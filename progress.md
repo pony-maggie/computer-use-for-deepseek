@@ -184,6 +184,42 @@ This file is the project memory for future agent sessions. Update it whenever sc
 - DeepSeek v4 direct screenshot understanding may not be available or reliable through the public API.
 - Runtime container smoke now depends on a published or locally built runtime image.
 - Run state and audit events are currently in-memory; persistent message history and durable audit logs remain follow-on work.
+- Invisible memory must remain conservative: it should not store uploaded file contents, credentials, screenshots, DOM dumps, one-off webpage facts, or detailed task traces.
+
+## 2026-05-25 Invisible Memory Planning
+
+- User approved a fully invisible memory direction: no Web UI surface, no normal user-facing controls, and no detailed per-task transcript storage.
+- Added design spec: `docs/superpowers/specs/2026-05-25-invisible-memory-design.md`.
+- Added architecture diagram source: `docs/memory-architecture.html`.
+- Rendered architecture screenshot: `docs/images/memory-architecture.png`.
+- Added English and Chinese README preview sections that describe invisible memory as planned work, not shipped behavior.
+- Added implementation plan: `docs/superpowers/plans/2026-05-25-invisible-memory.md`.
+- Added `feat-032` to `feature_list.json` with status `planned`.
+- Verification for this planning/doc pass:
+  - `python3 -m json.tool feature_list.json >/dev/null` passed.
+  - Targeted `rg` checks confirmed the English/Chinese README image references, new docs, and `feat-032` entries.
+  - Placeholder scan over the new memory docs and README found no unresolved markers.
+  - `./init.sh` passed.
+
+## 2026-05-25 Invisible Memory Implementation
+
+- Implemented `feat-032` as a backend-only memory layer:
+  - added `MemoryRecord` persistence and `MemoryRepository`;
+  - added deterministic `MemoryService` capture, filtering, ranking, and hidden context formatting;
+  - added `AgentCore.memory_context` injection into the model input;
+  - wired memory recall into `_build_agent`;
+  - wired terminal run capture into `_apply_run_result`;
+  - kept run API responses free of memory fields or `Memory Context` text.
+- Updated English and Chinese README sections from planned to implemented invisible memory.
+- Verification:
+  - `cd server && . .venv/bin/activate && pytest -v` passed with 81 tests.
+  - `cd web && npm test` passed with 54 tests.
+  - `cd web && npm run build` passed.
+  - `docker compose config` passed.
+  - `docker compose -f docker-compose.yml -f docker-compose.dev.yml config` passed.
+  - `python3 -m py_compile runtime/daemon.py` passed.
+  - `python3 -m json.tool feature_list.json >/dev/null` passed.
+  - `./scripts/smoke-runtime.sh` passed.
 
 ## 2026-05-17 Claude Demo Alignment Update
 
