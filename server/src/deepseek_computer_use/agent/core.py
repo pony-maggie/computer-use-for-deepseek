@@ -146,6 +146,7 @@ class AgentCore:
                     prompt_cache_hit_tokens=prompt_cache_hit_tokens,
                     prompt_cache_miss_tokens=prompt_cache_miss_tokens,
                     estimated_cost_usd=estimated_cost_usd,
+                    agent_messages=messages,
                 )
             if self.cost_budget_usd and estimated_cost_usd > self.cost_budget_usd:
                 return AgentRunResult(
@@ -158,6 +159,7 @@ class AgentCore:
                     prompt_cache_hit_tokens=prompt_cache_hit_tokens,
                     prompt_cache_miss_tokens=prompt_cache_miss_tokens,
                     estimated_cost_usd=estimated_cost_usd,
+                    agent_messages=messages,
                 )
             if parsed.final_text is not None:
                 self._emit(
@@ -189,6 +191,7 @@ class AgentCore:
                     prompt_cache_hit_tokens=prompt_cache_hit_tokens,
                     prompt_cache_miss_tokens=prompt_cache_miss_tokens,
                     estimated_cost_usd=estimated_cost_usd,
+                    agent_messages=messages,
                 )
             for tool_call in parsed.tool_calls:
                 decision = self.safety.evaluate(tool_call)
@@ -259,6 +262,7 @@ class AgentCore:
             prompt_cache_hit_tokens=prompt_cache_hit_tokens,
             prompt_cache_miss_tokens=prompt_cache_miss_tokens,
             estimated_cost_usd=estimated_cost_usd,
+            agent_messages=messages,
         )
 
     def _emit(self, kind: str, message: str, **payload: Any) -> None:

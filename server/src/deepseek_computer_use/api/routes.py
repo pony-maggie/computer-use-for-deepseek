@@ -23,7 +23,7 @@ from deepseek_computer_use.persistence.database import (
     create_tables,
     session_scope,
 )
-from deepseek_computer_use.persistence.repositories import MemoryRepository
+from deepseek_computer_use.persistence.repositories import MemoryRepository, RunRepository
 from deepseek_computer_use.persistence.schema import RunEventRecord, RunRecord
 from deepseek_computer_use.runtime.docker_runtime import DockerRuntime
 from deepseek_computer_use.runtime.mock_runtime import MockRuntime
@@ -46,9 +46,29 @@ def _initialize_history_store() -> None:
         db_path.parent.mkdir(parents=True, exist_ok=True)
     create_tables(_engine)
     columns = {column["name"] for column in inspect(_engine).get_columns("runs")}
-    if "final_text" not in columns:
+    run_column_sql = {
+        "final_text": "ALTER TABLE runs ADD COLUMN final_text TEXT",
+        "model": "ALTER TABLE runs ADD COLUMN model VARCHAR",
+        "steps": "ALTER TABLE runs ADD COLUMN steps INTEGER DEFAULT 0",
+        "prompt_tokens": "ALTER TABLE runs ADD COLUMN prompt_tokens INTEGER DEFAULT 0",
+        "completion_tokens": "ALTER TABLE runs ADD COLUMN completion_tokens INTEGER DEFAULT 0",
+        "total_tokens": "ALTER TABLE runs ADD COLUMN total_tokens INTEGER DEFAULT 0",
+        "prompt_cache_hit_tokens": (
+            "ALTER TABLE runs ADD COLUMN prompt_cache_hit_tokens INTEGER DEFAULT 0"
+        ),
+        "prompt_cache_miss_tokens": (
+            "ALTER TABLE runs ADD COLUMN prompt_cache_miss_tokens INTEGER DEFAULT 0"
+        ),
+        "estimated_cost_usd": "ALTER TABLE runs ADD COLUMN estimated_cost_usd FLOAT DEFAULT 0.0",
+        "pending_confirmation_json": "ALTER TABLE runs ADD COLUMN pending_confirmation_json TEXT",
+    }
+    missing_columns = [
+        statement for name, statement in run_column_sql.items() if name not in columns
+    ]
+    if missing_columns:
         with _engine.begin() as connection:
-            connection.execute(text("ALTER TABLE runs ADD COLUMN final_text TEXT"))
+            for statement in missing_columns:
+                connection.execute(text(statement))
 
 
 _initialize_history_store()
@@ -243,6 +263,7 @@ def reject_confirmation(run_id: str) -> RunState:
     run.pending_confirmation = None
     run.pending_confirmation_summary = None
     run.agent_messages = []
+    _replace_agent_messages(run.run_id, [])
     _append_event(run, "confirmation", f"Rejected {summary}")
     return run
 
@@ -400,8 +421,32 @@ def _persist_run(run: RunState) -> None:
         record.task = run.task
         record.status = run.status
         record.final_text = run.final_text
+        record.model = run.model
+        record.steps = run.steps
+        record.prompt_tokens = run.prompt_tokens
+        record.completion_tokens = run.completion_tokens
+        record.total_tokens = run.total_tokens
+        record.prompt_cache_hit_tokens = run.prompt_cache_hit_tokens
+        record.prompt_cache_miss_tokens = run.prompt_cache_miss_tokens
+        record.estimated_cost_usd = run.estimated_cost_usd
+        record.pending_confirmation_json = (
+            run.pending_confirmation.model_dump_json()
+            if run.pending_confirmation is not None
+            else None
+        )
         record.created_at = _parse_datetime(run.created_at)
         record.updated_at = _parse_datetime(run.updated_at)
+
+
+def _replace_agent_messages(run_id: str, messages: list[dict[str, Any]]) -> None:
+    with session_scope(_session_factory) as session:
+        RunRepository(session).replace_agent_messages(run_id, messages)
+
+
+def _load_agent_messages(run_id: str) -> list[dict[str, Any]]:
+    with session_scope(_session_factory) as session:
+        messages = RunRepository(session).list_agent_messages(run_id)
+    return [dict(message) for message in messages]
 
 
 def _persist_event(run_id: str, kind: str, event: dict[str, Any]) -> None:
@@ -448,13 +493,31 @@ def _load_persisted_run(run_id: str) -> RunState | None:
         record = session.get(RunRecord, run_id)
         if record is None:
             return None
+        pending_confirmation = (
+            ToolCall.model_validate_json(record.pending_confirmation_json)
+            if record.pending_confirmation_json
+            else None
+        )
         return RunState(
             run_id=record.id,
             task=record.task,
             status=record.status,
             final_text=record.final_text,
+            steps=record.steps or 0,
+            model=record.model or settings.deepseek_model,
+            prompt_tokens=record.prompt_tokens or 0,
+            completion_tokens=record.completion_tokens or 0,
+            total_tokens=record.total_tokens or 0,
+            prompt_cache_hit_tokens=record.prompt_cache_hit_tokens or 0,
+            prompt_cache_miss_tokens=record.prompt_cache_miss_tokens or 0,
+            estimated_cost_usd=record.estimated_cost_usd or 0.0,
             created_at=_format_datetime(record.created_at),
             updated_at=_format_datetime(record.updated_at),
+            pending_confirmation=pending_confirmation,
+            pending_confirmation_summary=(
+                _summarize_tool_call(pending_confirmation) if pending_confirmation else None
+            ),
+            agent_messages=_load_agent_messages(run_id),
         )
 
 
@@ -517,6 +580,8 @@ def _apply_run_result(run: RunState, result) -> None:
         _summarize_tool_call(result.pending_tool_call) if result.pending_tool_call else None
     )
     run.agent_messages = result.agent_messages or []
+    _persist_run(run)
+    _replace_agent_messages(run.run_id, run.agent_messages)
     _append_event(run, "status", f"Run finished with status {result.status}")
     _append_event(
         run,

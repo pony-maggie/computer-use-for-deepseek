@@ -8,6 +8,7 @@ from deepseek_computer_use.models.protocol import AgentStatus
 from deepseek_computer_use.persistence.schema import (
     MemoryRecord,
     RunEventRecord,
+    RunMessageRecord,
     RunRecord,
     WorkspaceFileRecord,
 )
@@ -51,6 +52,36 @@ class RunRepository:
         self.session.add(
             RunEventRecord(run_id=run_id, kind=kind, payload_json=json.dumps(payload, default=str))
         )
+
+    def replace_agent_messages(self, run_id: str, messages: list[dict[str, object]]) -> None:
+        self.session.query(RunMessageRecord).filter(RunMessageRecord.run_id == run_id).delete()
+        for index, message in enumerate(messages):
+            role = str(message.get("role", ""))
+            self.session.add(
+                RunMessageRecord(
+                    run_id=run_id,
+                    sequence=index,
+                    role=role,
+                    payload_json=json.dumps(message, default=str),
+                )
+            )
+
+    def list_agent_messages(self, run_id: str) -> list[dict[str, object]]:
+        records = (
+            self.session.query(RunMessageRecord)
+            .filter(RunMessageRecord.run_id == run_id)
+            .order_by(RunMessageRecord.sequence.asc(), RunMessageRecord.id.asc())
+            .all()
+        )
+        messages: list[dict[str, object]] = []
+        for record in records:
+            try:
+                payload = json.loads(record.payload_json)
+            except json.JSONDecodeError:
+                payload = {"role": record.role, "content": record.payload_json}
+            if isinstance(payload, dict):
+                messages.append(payload)
+        return messages
 
     def add_workspace_file(
         self, *, run_id: str, relative_path: str, role: str, size_bytes: int

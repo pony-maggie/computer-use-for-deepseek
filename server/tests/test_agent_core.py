@@ -285,6 +285,14 @@ async def test_agent_loop_runs_tool_and_returns_final_text() -> None:
     assert result.final_text == "done"
     assert result.total_tokens == 30
     assert len(runtime.actions) == 1
+    assert result.agent_messages is not None
+    assert [message["role"] for message in result.agent_messages] == [
+        "system",
+        "user",
+        "assistant",
+        "tool",
+        "assistant",
+    ]
 
 
 @pytest.mark.asyncio

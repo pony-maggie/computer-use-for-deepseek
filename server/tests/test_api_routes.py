@@ -4,6 +4,7 @@ from deepseek_computer_use.api.routes import (
     RunState,
     _apply_run_result,
     _build_agent,
+    _get_run,
     _session_factory,
     runs,
 )
@@ -178,6 +179,65 @@ def test_get_run_can_restore_persisted_history_summary() -> None:
     assert response.json()["task"] == "Open the saved report"
     assert response.json()["status"] == "created"
     assert response.json()["events"] == []
+
+
+def test_get_run_restores_persisted_agent_messages_and_pending_confirmation() -> None:
+    client = TestClient(create_app())
+    created = client.post("/api/runs", json={"task": "run shell command"}).json()
+    run_id = created["run_id"]
+    pending = ToolCall(
+        tool_call_id="call_restore",
+        name="bash",
+        bash=BashAction(command="printf persisted"),
+    )
+    messages = [
+        {"role": "system", "content": "system prompt"},
+        {"role": "user", "content": "run shell command"},
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_restore",
+                    "type": "function",
+                    "function": {
+                        "name": "bash",
+                        "arguments": '{"command": "printf persisted"}',
+                    },
+                }
+            ],
+        },
+    ]
+    result = AgentRunResult(
+        status="waiting_for_confirmation",
+        final_text="waiting for user confirmation",
+        steps=1,
+        prompt_tokens=11,
+        completion_tokens=7,
+        total_tokens=18,
+        prompt_cache_hit_tokens=3,
+        prompt_cache_miss_tokens=8,
+        estimated_cost_usd=0.0123,
+        pending_tool_call=pending,
+        agent_messages=messages,
+    )
+
+    _apply_run_result(runs[run_id], result)
+    runs.pop(run_id)
+
+    restored = _get_run(run_id)
+
+    assert restored.status == "waiting_for_confirmation"
+    assert restored.steps == 1
+    assert restored.prompt_tokens == 11
+    assert restored.completion_tokens == 7
+    assert restored.total_tokens == 18
+    assert restored.prompt_cache_hit_tokens == 3
+    assert restored.prompt_cache_miss_tokens == 8
+    assert restored.estimated_cost_usd == 0.0123
+    assert restored.pending_confirmation == pending
+    assert restored.pending_confirmation_summary == "bash: printf persisted"
+    assert restored.agent_messages == messages
 
 
 def test_local_frontend_origins_are_allowed_for_cors() -> None:

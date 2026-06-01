@@ -349,6 +349,18 @@
         "feat-032"
       ],
       "evidence": "Added regression tests for extraction completeness prompt guidance, post-first screenshot omission, large tool-output truncation, safe outputs/ file creation, path escape rejection, and runtime create no-overwrite behavior. Verification passed: server pytest 89 tests, web vitest 54 tests, web production build, docker compose config, dev compose config, runtime daemon py_compile, feature_list JSON validation, and ./init.sh."
+    },
+    {
+      "id": "feat-034",
+      "name": "Durable run transcript",
+      "description": "Persist model-facing agent messages, run usage counters, and pending confirmation state so backend run context can be restored after in-memory state is lost.",
+      "status": "done",
+      "dependencies": [
+        "feat-010",
+        "feat-023",
+        "feat-032"
+      ],
+      "evidence": "Added design and implementation plan docs. AgentCore now returns terminal agent_messages. SQLite persistence now stores run execution fields, pending confirmation JSON, and ordered run_messages. Restoration test verifies waiting confirmation, usage, and hidden agent messages survive in-memory state loss. Verification passed: targeted backend tests, full server pytest with 90 tests, feature_list JSON validation, docker compose config, and ./init.sh."
     }
   ]
 }

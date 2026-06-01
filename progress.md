@@ -528,3 +528,25 @@ This file is the project memory for future agent sessions. Update it whenever sc
   - `docker compose config`
   - Browser E2E on `http://127.0.0.1:3001/` confirmed Mobile and Tablet update the center sandbox frame, badge text, `data-viewport`, and active viewport button state.
 - Runtime E2E note: local ports `3000` and `8000` were occupied by old Docker services, so browser validation used Vite on `3001`; true runtime endpoint verification should be repeated after Actions builds and `./start.sh` pulls the new images.
+
+## 2026-06-01 Durable Run Transcript
+
+- Implemented `feat-034` after comparing the project with the Pi agent harness session model:
+  - added design spec `docs/superpowers/specs/2026-06-01-durable-run-transcript-design.md`;
+  - added implementation plan `docs/superpowers/plans/2026-06-01-durable-run-transcript.md`;
+  - added `run_messages` SQLite persistence for ordered model-facing messages;
+  - added run execution fields for model, step count, token/cache usage, estimated cost, and pending confirmation JSON;
+  - made `AgentCore` return terminal `agent_messages` so completed, failed, and waiting runs can be persisted;
+  - restored pending confirmation, usage counters, and hidden agent messages when in-memory run state is missing.
+- API responses still exclude `agent_messages`; transcript persistence is backend state only.
+- Verification:
+  - Red tests failed before implementation:
+    - `cd server && . .venv/bin/activate && pytest tests/test_agent_core.py::test_agent_loop_runs_tool_and_returns_final_text -v`
+    - `cd server && . .venv/bin/activate && pytest tests/test_api_routes.py::test_get_run_restores_persisted_agent_messages_and_pending_confirmation -v`
+  - Targeted backend regression passed:
+    - `cd server && . .venv/bin/activate && pytest tests/test_agent_core.py tests/test_api_routes.py tests/test_memory_service.py -v` passed with 36 tests.
+  - Full backend regression passed:
+    - `cd server && . .venv/bin/activate && pytest -v` passed with 90 tests.
+  - `python3 -m json.tool feature_list.json >/dev/null` passed.
+  - `docker compose config` passed.
+  - `./init.sh` passed.
